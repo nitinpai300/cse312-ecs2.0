@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theranos - Spotify Unwrapped</title>
+    <link rel="stylesheet" href="../static/css/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Theranos</h1>
+        
+    </header>
+    <div class="content-center">
+        <h2>Welcome to Spotify Unwrapped!</h2>
+        <p>Discover insights and visualize your Spotify data</p>
+        <p>Sign up today or login to view your charts</p>
+        {% if username %}
+            <p>Welcome back, {{ username }}!</p>
+            <form action="/logout" method="post">
+                <ul>
+                    <li><a href="/feed">Check Feed</a></li>
+                    <input type="submit" value="Logout">
+                </ul>
+            </form>
+        {% else %}
+        <form action="/logout" method="post">
+            <ul>
+                <li><a href="login.html">Login</a></li>
+                <li><a href="signup.html">Sign up!</a></li>
+                <!-- <li><a href="/feed">Check Feed</a></li> -->
+                <!-- <input type="submit" value="Logout"> -->
+            </ul>
+        </form>
+        {% endif %}
+    </div>    
+    
+    <footer>
+        <p>It's Jesse's fault footer</p>
+    </footer>
+</body>
+</html>

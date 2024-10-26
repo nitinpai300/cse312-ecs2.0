@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feed</title>
+    <link rel="stylesheet" type="text/css" href="../static/css/styles.css"/>
+</head>
+<script type = "text/javascript" src="static/js/functions.js"></script>
+<body>
+    <header>
+        <img src="static/images/images.jpeg" alt=""><h1>The Feed  </h1>
+            <p>Welcome, {{ username }}! <a href="/logout">               Logout!</a></p>
+            <li><a href="/">Home</a></li>
+    </header>
+    <section id="post-creation">
+        <h2>Create a Post</h2>
+        <form action="/feed" method="POST">
+            <textarea name="post_content" placeholder="CREATE A POST BY TYPING HERE......"></textarea>
+            <button type="submit">Post</button>
+        </form>
+    </section>
+        <!-- <h2>Create a Post</h2>
+
+            <form action="/feed" method="POST">
+                <textarea name="post_content" placeholder="CREATE A POST BY TYPING HERE......"></textarea>
+                <button type="submit" value="posting">Post</button>
+            </form>   -->
+        <section id="posts-section">
+            <h3>Recent Posts</h3>
+            {% for post in posts %}
+                <div class="post">
+                    <p><strong>{{ post.author }}:</strong> {{ post.content }}</p>
+                    <!--UNCOMMENT THIS TO SEE THE POST'S ID ON THE WEB PAGE
+                    <p>{{ post.postID }}</p>
+                    -->
+                    <p>Likes: {{ post.likes }}</p>
+                    <p>Liked by: {{ ", ".join(post.likedBy) }}</p>
+                </div>
+                <div class="post-actions">
+                    <button class="like" onclick="likeMessage('{{ post.postID }}')">Like</button>
+                    <button class="share">Share</button>
+                    <button class="comment">Comment</button>
+                </div>
+            {% else %}
+                <p>No posts yet! Be the first to share something.</p>
+            {% endfor %}
+        </section>
+</body>
+</html>
