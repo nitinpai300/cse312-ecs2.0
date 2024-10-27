@@ -33,22 +33,34 @@ def render():
 def login():
     '''
     JIMMY WORKING HERE, I do later, signup maybe done 
+    When a user sends a login request, authenticate the request based on the data stored in your database. 
+    If the [salted hash of the] password matches what you have stored in the database, the user is authenticated
     '''
     data = request.json
     username = data.get("username")
     password = data.get("password")
+
     if not users.find_one({"username": username}):
         response = make_response("HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\nUsername already in use")
         response.status_code = 400
         return response
-    #unsalt password
-    #if password not the same error 400
+    salt = users.find_one({"username": username}).get("salt")
+    passwordHASHED = hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
+    if passwordHASHED == users.find_one({"username": username}).get("password"):
+        #form token here
+        token = os.urandom(16).hex()
+        tokenHASHED = hashlib.sha256(token.encode()).hexdigest()
+        users.update_one({"username": username}, {"$set": {"authenticationTOKEN": tokenHASHED}})
+        #send 204 
+        response = make_response("HTTP/1.1 204 No Content\r\n\r\n")
+        response.set_cookie("authenticationTOKEN", token, httponly=True, max_age=3600)
+        response.status_code = 204
+        return response 
+    else:
+        response = make_response("HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\nInvalid username or password")
+        response.status_code = 400
+        return response
 
-    #give authentification token
-    #add token to db
-
-    #204 response
-    pass
 
 @app.route('/signup', methods=["POST"])
 def signup():
@@ -69,15 +81,12 @@ def signup():
         return response
     salt = os.urandom(16).hex()
     passwordHASHED = hashlib.sha256((salt + password).encode('utf-8')).hexdigest()
-    users.insert_one({"username": username, "password": passwordHASHED})
+    users.insert_one({"username": username, "password": passwordHASHED, "salt": salt})
 
     response = make_response("HTTP/1.1 204 No Content\r\n\r\n")
     response.status_code = 204
     return response
-    '''
-            response = "HTTP/1.1 204 No Content\r\n\r\n"
-            handler.request.sendall(response.encode("utf-8"))
-    '''
+
 
 @app.route('/signup.html', methods=['GET'])
 def signup_page():
