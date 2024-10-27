@@ -32,19 +32,19 @@ def render():
 @app.route('/login', methods=["GET", "POST"])
 def login():
     data = request.json
-    username = data.get("username")
-    password = data.get("password")
+    username = request.form["username"]
+    password = request.form["password"].encode('utf-8')
     userDB = users.find_one({"username": username})
-
     if not userDB:
+        print("user not found")
         response = make_response("HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\nUsername does not exist")
         response.status_code = 400
         return response
-    
     #if user exists
     salt = userDB.get("salt")
     passwordHASHED = hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
     if passwordHASHED == userDB.get("password"):
+        print("access granted")
         #form token here
         token = os.urandom(16).hex()
         tokenHASHED = hashlib.sha256(token.encode()).hexdigest()
@@ -56,6 +56,7 @@ def login():
         response.status_code = 204
         return response 
     else:
+        print("wrong password")
         response = make_response("HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\nInvalid username or password")
         response.status_code = 400
         return response
@@ -63,10 +64,9 @@ def login():
 
 @app.route('/signup', methods=["POST"])
 def signup():
-    data = request.json
-    username = data.get("username")
-    password = data.get("password")
-    confirm_password = data.get("confirmed_password")
+    username = request.form["username"]
+    password = request.form["password"].encode('utf-8')
+    confirm_password = request.form['confirm-password'].encode('utf-8')
     #please fix name for confirmed_password
     if users.find_one({"username": username}):
         response = make_response("HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\nUsername already in use")
@@ -76,9 +76,8 @@ def signup():
         response = make_response("HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\Passwords do not match, please re-enter")
         response.status_code = 400
         return response
-    
-    salt = os.urandom(16).hex()
-    passwordHASHED = hashlib.sha256((salt + password).encode('utf-8')).hexdigest()
+    salt = bcrypt.gensalt()
+    passwordHASHED = bcrypt.hashpw(password, salt)
     users.insert_one({"username": username, "password": passwordHASHED, "salt": salt})
     #send 204, flask method
     response = make_response("HTTP/1.1 204 No Content\r\n\r\n")
