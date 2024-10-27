@@ -7,7 +7,7 @@ import uuid
 
 app = Flask(__name__)
 mongo_client = MongoClient("mongo")
-db = mongo_client["ECS 2.0"]
+db = mongo_client["ECS"]
 users = db["users"]
 tokens = db["tokens"]
 posts = db["posts"]
@@ -16,7 +16,8 @@ app.secret_key = 'a' # tbh i'm not sure what this is for again -chris
 # routing index.html
 @app.route('/', methods = ["GET", "POST"])
 def index():
-    return render_template("/templates/index.html")
+    print("index detected")
+    return render_template("index.html")
 
 @app.route('/functions.js', methods = ["GET"])
 def js():
