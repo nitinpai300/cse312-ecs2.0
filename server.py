@@ -18,8 +18,15 @@ app.secret_key = 'a' # tbh i'm not sure what this is for again -chris
 # routing index.html
 @app.route('/', methods = ["GET", "POST"])
 def index():
-    print("index detected")
-    return render_template("index.html")
+    authenticationTOKEN = request.cookies.get("authenticationTOKEN")
+    user = None
+    if authenticationTOKEN:
+        tokenHASHED = hashlib.sha256(authenticationTOKEN.encode()).hexdigest()
+        user = users.find_one({"authenticationTOKEN": tokenHASHED})
+        if user:
+            username = user["username"]
+    return render_template("index.html", username=username)
+    #return render_template("index.html")
 
 @app.route('/functions.js', methods = ["GET"])
 def js():
