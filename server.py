@@ -97,8 +97,28 @@ def login_p():
 
 @app.route('/logout', methods=['POST', 'GET'])
 def logout():
-    pass
+    authenticationTOKEN = request.cookies.get("authenticationTOKEN")
+    if authenticationTOKEN:
+        tokenHASHED = hashlib.sha256(authenticationTOKEN.encode()).hexdigest()
+        temp = users.find_one({"authenticationTOKEN": tokenHASHED})
+        if temp:
+            users.update_one({"authenticationTOKEN": tokenHASHED}, {"$unset": {"authenticationTOKEN": ""}})
 
+    response = make_response(redirect('/'))
+    response.set_cookie('authenticationTOKEN', '', expires=0, httponly=True)
+    return response
+    
+'''
+    hw2 logout from mdjim, logout not done so far, i think
+    authenticationTOKEN = request.cookies.get("authenticationTOKEN")
+    if authenticationTOKEN != None:
+        tokenHASHED = hashlib.sha256(authenticationTOKEN.encode()).hexdigest()
+        temp = loginINFOdb.find_one({"authenticationTOKEN": tokenHASHED})
+        #if user logged in delete
+        if temp:
+            loginINFOdb.update_one({"authenticationTOKEN": hashlib.sha256(authenticationTOKEN.encode()).hexdigest()}, {"$unset": {"authenticationTOKEN": ""}})
+    return "HTTP/1.1 302 Found\r\nLocation: /\r\nSet-Cookie: authenticationTOKEN=; expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly\r\nContent-Length: 0\r\n\r\n"
+'''
 # post feed
 @app.route("/feed", methods = ['POST','GET'])
 def feed():
