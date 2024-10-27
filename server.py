@@ -49,11 +49,16 @@ def login():
         tokenHASHED = hashlib.sha256(token.encode()).hexdigest()
         users.update_one({"username": username}, {"$set": {"authenticationTOKEN": tokenHASHED}})
 
+        response = make_response(redirect(url_for('index')))
+        response.set_cookie("authenticationTOKEN", token, httponly=True, max_age=3600)
+        return response
+        '''       
         #send 204 
         response = make_response("HTTP/1.1 204 No Content\r\n\r\n")
         response.set_cookie("authenticationTOKEN", token, httponly=True, max_age=3600)
         response.status_code = 204
-        return response 
+        return response '''
+
     else:
         print("wrong password")
         response = make_response("HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\nInvalid username or password")
@@ -78,10 +83,14 @@ def signup():
     salt = bcrypt.gensalt()
     passwordHASHED = bcrypt.hashpw(password, salt)
     users.insert_one({"username": username, "password": passwordHASHED, "salt": salt})
+    '''
     #send 204, flask method
     response = make_response("HTTP/1.1 204 No Content\r\n\r\n")
     response.status_code = 204
     return response
+    '''
+    return redirect(url_for('index'))
+
 
 
 @app.route('/signup.html', methods=['GET'])
