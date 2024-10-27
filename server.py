@@ -26,7 +26,6 @@ def index():
         if user:
             username = user["username"]
     return render_template("index.html", username=username)
-    #return render_template("index.html")
 
 @app.route('/functions.js', methods = ["GET"])
 def js():
@@ -59,12 +58,6 @@ def login():
         response = make_response(redirect(url_for('index')))
         response.set_cookie("authenticationTOKEN", token, httponly=True, max_age=3600)
         return response
-        '''       
-        #send 204 
-        response = make_response("HTTP/1.1 204 No Content\r\n\r\n")
-        response.set_cookie("authenticationTOKEN", token, httponly=True, max_age=3600)
-        response.status_code = 204
-        return response '''
 
     else:
         print("wrong password")
@@ -90,12 +83,6 @@ def signup():
     salt = bcrypt.gensalt()
     passwordHASHED = bcrypt.hashpw(password, salt)
     users.insert_one({"username": username, "password": passwordHASHED, "salt": salt})
-    '''
-    #send 204, flask method
-    response = make_response("HTTP/1.1 204 No Content\r\n\r\n")
-    response.status_code = 204
-    return response
-    '''
     return redirect(url_for('index'))
 
 
