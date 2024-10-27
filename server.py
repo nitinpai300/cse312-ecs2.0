@@ -31,26 +31,25 @@ def render():
 
 @app.route('/login', methods=["GET", "POST"])
 def login():
-    '''
-    JIMMY WORKING HERE, I do later, signup maybe done 
-    When a user sends a login request, authenticate the request based on the data stored in your database. 
-    If the [salted hash of the] password matches what you have stored in the database, the user is authenticated
-    '''
     data = request.json
     username = data.get("username")
     password = data.get("password")
+    userDB = users.find_one({"username": username})
 
-    if not users.find_one({"username": username}):
-        response = make_response("HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\nUsername already in use")
+    if not userDB:
+        response = make_response("HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\nUsername does not exist")
         response.status_code = 400
         return response
-    salt = users.find_one({"username": username}).get("salt")
+    
+    #if user exists
+    salt = userDB.get("salt")
     passwordHASHED = hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
-    if passwordHASHED == users.find_one({"username": username}).get("password"):
+    if passwordHASHED == userDB.get("password"):
         #form token here
         token = os.urandom(16).hex()
         tokenHASHED = hashlib.sha256(token.encode()).hexdigest()
         users.update_one({"username": username}, {"$set": {"authenticationTOKEN": tokenHASHED}})
+
         #send 204 
         response = make_response("HTTP/1.1 204 No Content\r\n\r\n")
         response.set_cookie("authenticationTOKEN", token, httponly=True, max_age=3600)
@@ -64,13 +63,11 @@ def login():
 
 @app.route('/signup', methods=["POST"])
 def signup():
-    '''
-    JIMMY -> need help fixing naming, copied hw2 more or less, not sure how it works
-    '''
     data = request.json
     username = data.get("username")
     password = data.get("password")
     confirm_password = data.get("confirmed_password")
+    #please fix name for confirmed_password
     if users.find_one({"username": username}):
         response = make_response("HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\nUsername already in use")
         response.status_code = 400
@@ -79,10 +76,11 @@ def signup():
         response = make_response("HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\Passwords do not match, please re-enter")
         response.status_code = 400
         return response
+    
     salt = os.urandom(16).hex()
     passwordHASHED = hashlib.sha256((salt + password).encode('utf-8')).hexdigest()
     users.insert_one({"username": username, "password": passwordHASHED, "salt": salt})
-
+    #send 204, flask method
     response = make_response("HTTP/1.1 204 No Content\r\n\r\n")
     response.status_code = 204
     return response
