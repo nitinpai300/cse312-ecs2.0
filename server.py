@@ -31,7 +31,6 @@ def render():
 
 @app.route('/login', methods=["GET", "POST"])
 def login():
-    data = request.json
     username = request.form["username"]
     password = request.form["password"].encode('utf-8')
     userDB = users.find_one({"username": username})
@@ -42,7 +41,7 @@ def login():
         return response
     #if user exists
     salt = userDB.get("salt")
-    passwordHASHED = hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
+    passwordHASHED = bcrypt.hashpw(password, salt)
     if passwordHASHED == userDB.get("password"):
         print("access granted")
         #form token here
