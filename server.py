@@ -13,25 +13,32 @@ db = mongo_client["ECS"]
 users = db["users"]
 tokens = db["tokens"]
 posts = db["posts"]
-app.secret_key = 'a' # tbh i'm not sure what this is for again -chris
+app.secret_key = 'a'  # tbh i'm not sure what this is for again -chris
+
 
 # routing index.html
-@app.route('/', methods = ["GET", "POST"])
+@app.route('/', methods=["GET", "POST"])
 def index():
-    print("index detected")
+    authenticationTOKEN = request.cookies.get("authenticationTOKEN", "none")
+    auth, usr, xsrf = authenticate(authenticationTOKEN)
+    if auth:
+        return render_template("index.html", username=usr)
+
     return render_template("index.html")
 
-@app.route('/functions.js', methods = ["GET"])
+
+@app.route('/functions.js', methods=["GET"])
 def js():
     return render_template("/static/js/functions.js")
+
 
 @app.route('/images.jpeg', methods=['GET'])
 def render():
     return render_template("/static/images/images.jpeg")
 
+
 @app.route('/login', methods=["GET", "POST"])
 def login():
-    data = request.json
     username = request.form["username"]
     password = request.form["password"].encode('utf-8')
     userDB = users.find_one({"username": username})
@@ -40,24 +47,24 @@ def login():
         response = make_response("HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\nUsername does not exist")
         response.status_code = 400
         return response
-    #if user exists
-    salt = userDB.get("salt")
-    passwordHASHED = hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
-    if passwordHASHED == userDB.get("password"):
+    # if user exists
+    authorized = bcrypt.checkpw(password, userDB.get("password").encode('utf-8'))
+    if authorized:
         print("access granted")
-        #form token here
-        token = os.urandom(16).hex()
-        tokenHASHED = hashlib.sha256(token.encode()).hexdigest()
-        users.update_one({"username": username}, {"$set": {"authenticationTOKEN": tokenHASHED}})
+        # form token here
+        token = str(uuid.uuid1().int)
+        tokenHASHED = bcrypt.hashpw(token.encode(), bcrypt.gensalt()).decode('utf-8')
+        tokens.insert_one({"username": username, "authenticationTOKEN": f"{tokenHASHED}"})
 
-        #send 204 
+        # send 204
         response = make_response("HTTP/1.1 204 No Content\r\n\r\n")
         response.set_cookie("authenticationTOKEN", token, httponly=True, max_age=3600)
         response.status_code = 204
-        return response 
+        return response
     else:
         print("wrong password")
-        response = make_response("HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\nInvalid username or password")
+        response = make_response(
+            "HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\nInvalid username or password")
         response.status_code = 400
         return response
 
@@ -67,22 +74,50 @@ def signup():
     username = request.form["username"]
     password = request.form["password"].encode('utf-8')
     confirm_password = request.form['confirm-password'].encode('utf-8')
-    #please fix name for confirmed_password
+    # please fix name for confirmed_password
     if users.find_one({"username": username}):
         response = make_response("HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\nUsername already in use")
         response.status_code = 400
         return response
     if password != confirm_password:
-        response = make_response("HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\Passwords do not match, please re-enter")
+        response = make_response(
+            "HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\Passwords do not match, please re-enter")
         response.status_code = 400
         return response
     salt = bcrypt.gensalt()
     passwordHASHED = bcrypt.hashpw(password, salt)
-    users.insert_one({"username": username, "password": passwordHASHED, "salt": salt})
-    #send 204, flask method
+    users.insert_one({"username": username, "password": f"{passwordHASHED.decode()}"})
+    # send 204, flask method
     response = make_response("HTTP/1.1 204 No Content\r\n\r\n")
     response.status_code = 204
     return response
+
+
+def authenticate(token, xsrf=None):
+    # Set default values for a guest
+    usr = "Guest"
+    users = tokens.find()
+    token = token.encode()
+    XS = str(uuid.uuid1())
+    for user in users:
+        # loop through authenticated users and check the hash of their passwd
+        auth_token = user.get("authenticationTOKEN", "").encode()
+        auth = bcrypt.checkpw(token, auth_token)
+        if auth:
+            # Grab username from the authenticated user
+            usr = user.get("username")
+            # If xsrf is set to None, return a new token
+            if xsrf is None:
+                print("was:", user.get("xsrf"), "is now:", XS)
+                tokens.update_one({"username": usr}, {"$set": {"xsrf": XS}})
+            # Evaluate the token
+            else:
+                XS = xsrf == user.get("xsrf")
+            print("\nauthorized: ", usr)
+            return auth, usr, XS
+
+    print("---Guest not authorized---")
+    return False, usr, XS
 
 
 @app.route('/signup.html', methods=['GET'])
@@ -94,19 +129,19 @@ def signup_page():
 def login_p():
     return render_template('login.html')
 
+
 @app.route('/logout', methods=['POST', 'GET'])
 def logout():
-    authenticationTOKEN = request.cookies.get("authenticationTOKEN")
-    if authenticationTOKEN:
-        tokenHASHED = hashlib.sha256(authenticationTOKEN.encode()).hexdigest()
-        temp = users.find_one({"authenticationTOKEN": tokenHASHED})
-        if temp:
-            users.update_one({"authenticationTOKEN": tokenHASHED}, {"$unset": {"authenticationTOKEN": ""}})
-
+    authenticationTOKEN = request.cookies.get("authenticationTOKEN").encode("utf-8")
+    auth, usr, xsrf = authenticate(authenticationTOKEN)
+    if auth:
+        tokens.delete_one({"username": usr})
+        authenticationTOKEN = "none"
     response = make_response(redirect('/'))
-    response.set_cookie('authenticationTOKEN', '', expires=0, httponly=True)
+    response.set_cookie('authenticationTOKEN', f"{authenticationTOKEN}", expires=3600, httponly=True)
     return response
-    
+
+
 '''
     hw2 logout from mdjim, logout not done so far, i think
     authenticationTOKEN = request.cookies.get("authenticationTOKEN")
@@ -118,10 +153,13 @@ def logout():
             loginINFOdb.update_one({"authenticationTOKEN": hashlib.sha256(authenticationTOKEN.encode()).hexdigest()}, {"$unset": {"authenticationTOKEN": ""}})
     return "HTTP/1.1 302 Found\r\nLocation: /\r\nSet-Cookie: authenticationTOKEN=; expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly\r\nContent-Length: 0\r\n\r\n"
 '''
+
+
 # post feed
-@app.route("/feed", methods = ['POST','GET'])
+@app.route("/feed", methods=['POST', 'GET'])
 def feed():
     pass
+
 
 @app.route("/like", methods=['POST'])
 def likePost():
@@ -145,13 +183,15 @@ def likePost():
         users.update_one({"username": username}, {"$pull": {"liked_posts": postID}})
         return redirect(url_for('feed'))
 
+
 @app.after_request
 def set_response_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
     return response
 
-if __name__=='__main__':
-    app.run(port= 8080, host="0.0.0.0")
+
+if __name__ == '__main__':
+    app.run(port=8080, host="0.0.0.0")
 #
 
 
