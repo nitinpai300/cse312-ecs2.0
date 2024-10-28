@@ -25,7 +25,9 @@ def index():
         user = users.find_one({"authenticationTOKEN": tokenHASHED})
         if user:
             username = user["username"]
-    return render_template("index.html", username=username)
+        return render_template("index.html", username=username)
+    else:
+        return render_template("index.html")
 
 @app.route('/functions.js', methods = ["GET"])
 def js():
@@ -96,6 +98,7 @@ def signup_page():
 def login_p():
     return render_template('login.html')
 
+
 @app.route('/logout', methods=['POST', 'GET'])
 def logout():
     authenticationTOKEN = request.cookies.get("authenticationTOKEN")
@@ -108,18 +111,8 @@ def logout():
     response = make_response(redirect('/'))
     response.set_cookie('authenticationTOKEN', '', expires=0, httponly=True)
     return response
-    
-'''
-    hw2 logout from mdjim, logout not done so far, i think
-    authenticationTOKEN = request.cookies.get("authenticationTOKEN")
-    if authenticationTOKEN != None:
-        tokenHASHED = hashlib.sha256(authenticationTOKEN.encode()).hexdigest()
-        temp = loginINFOdb.find_one({"authenticationTOKEN": tokenHASHED})
-        #if user logged in delete
-        if temp:
-            loginINFOdb.update_one({"authenticationTOKEN": hashlib.sha256(authenticationTOKEN.encode()).hexdigest()}, {"$unset": {"authenticationTOKEN": ""}})
-    return "HTTP/1.1 302 Found\r\nLocation: /\r\nSet-Cookie: authenticationTOKEN=; expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly\r\nContent-Length: 0\r\n\r\n"
-'''
+
+
 # post feed
 @app.route("/feed", methods = ['POST','GET'])
 def feed():
