@@ -5,16 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Environmental Criticism Savants 2.0 - Spotify Unwrapped</title>
     <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="/static/js/functions.js"></script>
 </head>
-<body>
+<body onload="displayText();">
     <header>
         <h1>Environmental Criticism Savants 2.0</h1>
         
     </header>
     <div class="content-center">
         <h2>Welcome to ECS 2.0</h2>
-        <p>Discover insights and visualize your Spotify data</p>
-        <p>Sign up today or login to view your charts</p>
+        <img src="static/images/images.jpg" style="max-width:150px;" alt="">
+        <p>Sign up today or login to view posts</p>
+        <p id="description">
+            Welcome to Environmental Criticism Savants 2.0's Project for CSE 312.
+        </p>
         {% if username %}
             <p>Welcome back, {{ username }}!</p>
             <form action="/logout" method="post">

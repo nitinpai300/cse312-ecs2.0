@@ -11,3 +11,7 @@ function likeMessage(postID) {
     request.setRequestHeader("Content-Type", "application/json");
     request.send(JSON.stringify({postID: postID}));
 }
+
+function displayText() {
+    document.getElementById("description").innerHTML += "<br/>If you are seeing this, then displayText() in functions.js is doing it's job! 😀";
+}
