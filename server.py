@@ -19,15 +19,14 @@ app.secret_key = 'a' # tbh i'm not sure what this is for again -chris
 @app.route('/', methods = ["GET", "POST"])
 def index():
     authenticationTOKEN = request.cookies.get("authenticationTOKEN")
-    user = None
+    username = None
     if authenticationTOKEN:
         tokenHASHED = hashlib.sha256(authenticationTOKEN.encode()).hexdigest()
         user = users.find_one({"authenticationTOKEN": tokenHASHED})
         if user:
             username = user["username"]
         return render_template("index.html", username=username)
-    else:
-        return render_template("index.html")
+
 
 @app.route('/functions.js', methods = ["GET"])
 def js():
@@ -108,9 +107,10 @@ def logout():
         if temp:
             users.update_one({"authenticationTOKEN": tokenHASHED}, {"$unset": {"authenticationTOKEN": ""}})
 
-    response = make_response(redirect('/'))
-    response.set_cookie('authenticationTOKEN', '', expires=0, httponly=True)
-    return response
+    #response = make_response(redirect('/'))
+    #response.set_cookie('authenticationTOKEN', '', expires=0, httponly=True)
+    #return response
+    return redirect('/')
 
 
 # post feed
