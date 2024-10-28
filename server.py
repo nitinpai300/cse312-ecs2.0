@@ -30,10 +30,9 @@ def index():
 def js():
     return render_template("/static/js/functions.js")
 
-
-@app.route('/images.jpeg', methods=['GET'])
+@app.route('/images.jpg', methods=['GET'])
 def render():
-    return render_template("/static/images/images.jpeg")
+    return render_template("/static/images/images.jpg")
 
 
 @app.route('/login', methods=["GET", "POST"])
