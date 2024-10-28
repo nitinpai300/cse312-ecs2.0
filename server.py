@@ -46,13 +46,13 @@ def login():
         response.status_code = 400
         return response
     # if user exists
-    authorized = bcrypt.checkpw(password, userDB.get("password").encode('utf-8'))
+    authorized = bcrypt.checkpw(password, userDB.get("password"))
     if authorized:
         print("access granted")
         # form token here
         token = str(uuid.uuid1().int)
-        tokenHASHED = bcrypt.hashpw(token.encode(), bcrypt.gensalt()).decode('utf-8')
-        tokens.insert_one({"username": username, "authenticationTOKEN": f"{tokenHASHED}"})
+        tokenHASHED = bcrypt.hashpw(token.encode(), bcrypt.gensalt())
+        tokens.insert_one({"username": username, "authenticationTOKEN": tokenHASHED})
         # send 204
         response = make_response(redirect(url_for('index')))
         response.set_cookie("authenticationTOKEN", token, httponly=True, max_age=3600)
@@ -83,7 +83,7 @@ def signup():
         return response
     salt = bcrypt.gensalt()
     passwordHASHED = bcrypt.hashpw(password, salt)
-    users.insert_one({"username": username, "password": f"{passwordHASHED.decode()}", "liked_posts":[]})
+    users.insert_one({"username": username, "password": passwordHASHED, "liked_posts":[]})
     # send 204, flask method
     response = make_response("HTTP/1.1 204 No Content\r\n\r\n")
     response.status_code = 204
@@ -99,7 +99,7 @@ def authenticate(token, xsrf=None):
     XS = str(uuid.uuid1())
     for user in users:
         # loop through authenticated users and check the hash of their passwd
-        auth_token = user.get("authenticationTOKEN", "").encode()
+        auth_token = user.get("authenticationTOKEN", "")
         auth = bcrypt.checkpw(token, auth_token)
         if auth:
             # Grab username from the authenticated user
