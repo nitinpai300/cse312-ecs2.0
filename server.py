@@ -26,7 +26,6 @@ def index():
 
     return render_template("index.html")
 
-
 @app.route('/functions.js', methods=["GET"])
 def js():
     return render_template("/static/js/functions.js")
@@ -55,7 +54,6 @@ def login():
         token = str(uuid.uuid1().int)
         tokenHASHED = bcrypt.hashpw(token.encode(), bcrypt.gensalt()).decode('utf-8')
         tokens.insert_one({"username": username, "authenticationTOKEN": f"{tokenHASHED}"})
-
         # send 204
         response = make_response(redirect(url_for('index')))
         response.set_cookie("authenticationTOKEN", token, httponly=True, max_age=3600)
@@ -91,6 +89,7 @@ def signup():
     response = make_response("HTTP/1.1 204 No Content\r\n\r\n")
     response.status_code = 204
     return response
+
 
 
 def authenticate(token, xsrf=None):
