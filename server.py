@@ -148,39 +148,3 @@ def set_response_headers(response):
 if __name__=='__main__':
     app.run(port= 8080, host="0.0.0.0")
 #
-
-
-'''
-
-Objective 2: Authentication
-Add authentication to your app. When navigating to you home page, the user should be presented with 2 forms:
-
-A registration from 
-Used when a user creates an account by entering a username and 2 passwords (They provide the same password twice)
-A login form
-Used to login after a user creates an account by entering the same username and password that was used when they registered
-
-You may use any approach you'd like to build these forms as long as they contain these features:
-
-After registration or login, the user should still be on the homepage (Either using AJAX or a redirect). The user should not have to manually navigate back to your app
-Checking if the 2 entered passwords are the same must be done on your server. Do not trust the front end for this verification
-A user cannot register with a username that is already taken by another user
-
-When a user is logged in, their username must be displayed somewhere on your home page.
-
-A logged in user must have a way to logout that will invalidate their auth token.
-
-When a user sends a registration request, store their username and a salted hash of their password in your database.
-
-When a user sends a login request, authenticate the request based on the data stored in your database. If the [salted hash of the] password matches what you have stored in the database, the user is authenticated.
-
-When a user successfully logs in, set an authentication token as a cookie for that user with the HttpOnly directive set. These tokens should be random values that are associated with the user. You must store a hash (no salt required) of each token in your database so you can verify them on subsequent requests.
-
-The auth token cookie must have an expiration time of 1 hour or longer. It cannot be a session cookie.
-
-Security: Never store plain text passwords. You must only store salted hashes of your users' passwords. It is strongly recommended that you use the bcrypt library to handle salting and hashing.
-
-Security: Only hashes of your auth tokens should be stored in your database (Do not store the tokens as plain text). Salting is not expected.
-
-Security: Set the HttpOnly directive on your cookie storing the authentication token.
-'''
