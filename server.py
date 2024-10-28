@@ -83,7 +83,7 @@ def signup():
         return response
     salt = bcrypt.gensalt()
     passwordHASHED = bcrypt.hashpw(password, salt)
-    users.insert_one({"username": username, "password": f"{passwordHASHED.decode()}"})
+    users.insert_one({"username": username, "password": f"{passwordHASHED.decode()}", "liked_posts":[]})
     # send 204, flask method
     response = make_response("HTTP/1.1 204 No Content\r\n\r\n")
     response.status_code = 204
@@ -138,10 +138,17 @@ def logout():
     return response
 
 
-# post feed
 @app.route("/feed", methods=['POST', 'GET'])
 def feed():
-    pass
+    if request.method == 'POST':
+        user_authtoken = request.cookies.get("authenticationTOKEN")
+        auth, user, xsrf = authenticate(user_authtoken)
+        post_content = request.form['post_content']
+        posts.insert_one({"postID": str(uuid.uuid4()), "author": user, "post_content": post_content, "likes": 0, "likedBy": []})
+        return redirect(url_for('feed'))
+    else:
+        getPosts = posts.find()
+        return render_template('feed.html', posts=getPosts)
 
 
 @app.route("/like", methods=['POST'])
@@ -149,21 +156,21 @@ def likePost():
     # Retrieve the messageId from the request body
     postID = request.json.get('postID')
     # check if post is in user's liked posts database column
-    username = session.get("username")
-    user = users.find_one({"username": username})
+    user_authtoken = request.cookies.get("authenticationTOKEN")
+    auth, usr, xsrf = authenticate(user_authtoken)
+    user = users.find_one({"username": usr})
     liked_posts = user.get("liked_posts")
     # if it isnt, increment the post's likes column by 1 and add the post to user's liked posts column
     if postID not in liked_posts:
         posts.update_one({"postID": postID}, {"$inc": {"likes": 1}})
-        posts.update_one({"postID": postID}, {"$push": {"likedBy": username}})
-        users.update_one({"username": username}, {"$push": {"liked_posts": postID}})
-
+        posts.update_one({"postID": postID}, {"$push": {"likedBy": usr}})
+        users.update_one({"username": usr}, {"$push": {"liked_posts": postID}})
         return redirect(url_for('feed'))
     # else, subtract one like from the post and remove it from user's liked posts data column
     else:
         posts.update_one({"postID": postID}, {"$inc": {"likes": -1}})
-        posts.update_one({"postID": postID}, {"$pull": {"likedBy": username}})
-        users.update_one({"username": username}, {"$pull": {"liked_posts": postID}})
+        posts.update_one({"postID": postID}, {"$pull": {"likedBy": usr}})
+        users.update_one({"username": usr}, {"$pull": {"liked_posts": postID}})
         return redirect(url_for('feed'))
 
 
