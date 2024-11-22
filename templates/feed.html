@@ -35,6 +35,7 @@
                     <!--UNCOMMENT THIS TO SEE THE POST'S ID ON THE WEB PAGE
                     <p>{{ post.postID }}</p>
                     -->
+                    <img src="{{ post.filename }}" />
                     <p>Likes: {{ post.likes }}</p>
                     <p>Liked by: {{ ", ".join(post.likedBy) }}</p>
                 </div>

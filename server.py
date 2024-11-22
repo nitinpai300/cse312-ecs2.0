@@ -144,7 +144,14 @@ def feed():
         user_authtoken = request.cookies.get("authenticationTOKEN")
         auth, user, xsrf = authenticate(user_authtoken)
         post_content = request.form['post_content']
-        posts.insert_one({"postID": str(uuid.uuid4()), "author": user, "post_content": post_content, "likes": 0, "likedBy": []})
+        # save image to disk - by chris j
+        filename = ""
+        if "upload" in request.files:
+            file = request.files["upload"]
+            filename = f"static/images/{str(uuid.uuid4())}.jpg"
+            with open(filename, "wb") as f:
+                f.write(file.read())
+        posts.insert_one({"postID": str(uuid.uuid4()), "author": user, "post_content": post_content, "filename": filename, "likes": 0, "likedBy": []})
         return redirect(url_for('feed'))
     else:
         getPosts = posts.find()
