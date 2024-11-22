@@ -15,8 +15,9 @@
     </header>
     <section id="post-creation">
         <h2>Create a Post</h2>
-        <form action="/feed" method="POST">
+        <form action="/feed" method="POST" enctype="multipart/form-data">
             <textarea name="post_content" placeholder="CREATE A POST BY TYPING HERE......"></textarea>
+            <input type = "file" name = "upload">
             <button type="submit">Post</button>
         </form>
     </section>
@@ -34,6 +35,7 @@
                     <!--UNCOMMENT THIS TO SEE THE POST'S ID ON THE WEB PAGE
                     <p>{{ post.postID }}</p>
                     -->
+                    <img src="{{ post.filename }}" />
                     <p>Likes: {{ post.likes }}</p>
                     <p>Liked by: {{ ", ".join(post.likedBy) }}</p>
                 </div>
