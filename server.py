@@ -30,7 +30,6 @@ def on_connect():
     if auth:
         session['username'] = usr
         currentUSERLST[usr] =  request.sid
-        #^^^ https://stackoverflow.com/questions/27177999/getting-socket-id-of-a-client-in-flask-socket-io
         emit("validLOGIN", {"username": usr})
         emit("userLIST", list(currentUSERLST.keys()), broadcast=True)
     else:
@@ -82,6 +81,10 @@ def likePost(data):
         emit("updateLikeCount", postVALUES, broadcast= True)
 
 
+@socketio.on('getUserList')
+def activeUsers():
+    emit("userLIST", list(currentUSERLST.keys())) 
+
 
 #work in progress
 @socketio.on('directMessage')
@@ -94,7 +97,6 @@ def DM(data):
         emit('directMessage', {'user': sender, 'message': message}, room=recieverSID)
     else:
         emit('invalidDM', {'message': f'{reciever} cannot take direct message or is offline'})
-
 
 
 @socketio.on('disconnect')
@@ -226,49 +228,6 @@ def logout():
         tokens.delete_one({"username": usr})
     response = make_response(redirect('/'))
     return response
-
-
-@app.route("/feed", methods=['POST', 'GET'])
-def feed():
-    if request.method == 'POST':
-        user_authtoken = request.cookies.get("authenticationTOKEN")
-        auth, user, xsrf = authenticate(user_authtoken)
-        post_content = request.form['post_content']
-        # save image to disk - by chris j
-        filename = ""
-        if "upload" in request.files:
-            file = request.files["upload"]
-            filename = f"static/images/{str(uuid.uuid4())}.jpg"
-            with open(filename, "wb") as f:
-                f.write(file.read())
-        posts.insert_one({"postID": str(uuid.uuid4()), "author": user, "post_content": post_content, "filename": filename, "likes": 0, "likedBy": []})
-        return redirect(url_for('feed'))
-    else:
-        getPosts = posts.find()
-        return render_template('feed.html', posts=getPosts)
-
-
-@app.route("/like", methods=['POST'])
-def likePost():
-    # Retrieve the messageId from the request body
-    postID = request.json.get('postID')
-    # check if post is in user's liked posts database column
-    user_authtoken = request.cookies.get("authenticationTOKEN")
-    auth, usr, xsrf = authenticate(user_authtoken)
-    user = users.find_one({"username": usr})
-    liked_posts = user.get("liked_posts")
-    # if it isnt, increment the post's likes column by 1 and add the post to user's liked posts column
-    if postID not in liked_posts:
-        posts.update_one({"postID": postID}, {"$inc": {"likes": 1}})
-        posts.update_one({"postID": postID}, {"$push": {"likedBy": usr}})
-        users.update_one({"username": usr}, {"$push": {"liked_posts": postID}})
-        return redirect(url_for('feed'))
-    # else, subtract one like from the post and remove it from user's liked posts data column
-    else:
-        posts.update_one({"postID": postID}, {"$inc": {"likes": -1}})
-        posts.update_one({"postID": postID}, {"$pull": {"likedBy": usr}})
-        users.update_one({"username": usr}, {"$pull": {"liked_posts": postID}})
-        return redirect(url_for('feed'))
 
 
 @app.after_request
