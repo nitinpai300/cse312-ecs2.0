@@ -21,7 +21,7 @@ app.secret_key = 'a'  # tbh i'm not sure what this is for again -chris
 
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 rooms_users = defaultdict(set)
-
+currentUSERLST = {}
 #----------WEBSOCKET--------------------------------------------------------------
 @socketio.on('connect')
 def on_connect():
@@ -29,7 +29,10 @@ def on_connect():
     auth, usr, xsrf = authenticate(authenticationTOKEN)
     if auth:
         session['username'] = usr
+        currentUSERLST[usr] =  request.sid
+        #^^^ https://stackoverflow.com/questions/27177999/getting-socket-id-of-a-client-in-flask-socket-io
         emit("validLOGIN", {"username": usr})
+        emit("userLIST", list(currentUSERLST.keys()), broadcast=True)
     else:
         emit("invalidLOGIN", {"message": "did not connect to websocket"})
 
@@ -39,11 +42,12 @@ def WS_message(data):
     if username:
         m = data.get('message', '')
         emit('message', {'user': username, 'message': m}, broadcast=True)
-        #emit('message', {'user': username, 'message': request.get_json()['message']}, broadcast=True)
 
 @socketio.on('disconnect')
 def on_disconnect():
     username = session.get('username')
+    if username:
+        currentUSERLST.pop(username)
     print(f'{username} left chat')
 
 #--------------------------------------------------------------------------------------
