@@ -40,8 +40,46 @@ def on_connect():
 def WS_message(data):
     username = session.get('username')
     if username:
-        m = data.get('message', '')
-        emit('message', {'user': username, 'message': m}, broadcast=True)
+        post_content = data.get('post_content')
+        filename = data.get('filename', "")
+        PID = str(uuid.uuid4())
+        posts.insert_one({"postID": PID, "author": username, "post_content": post_content, "filename": filename, "likes": 0, "likedBy": []})
+        postVALUES = {
+            'postID':PID,
+            'author':username,
+            'post_content':post_content,
+            'filename':filename,
+            'likes':0,
+            'likedBy':[],
+        }
+        emit('postINFO', postVALUES, broadcast= True)
+        
+
+@socketio.on('likePost')
+def likePost(data):
+    postID = data.get('postID')
+    user_authtoken = request.cookies.get("authenticationTOKEN")
+    auth, usr, xsrf = authenticate(user_authtoken)
+    if auth:
+        user = users.find_one({"username": usr})
+        liked_posts = user.get("liked_posts", [])
+        #copy and pasted if postID ...
+        if postID not in liked_posts:
+            posts.update_one({"postID": postID}, {"$inc": {"likes": 1}})
+            posts.update_one({"postID": postID}, {"$push": {"likedBy": usr}})
+            users.update_one({"username": usr}, {"$push": {"liked_posts": postID}})
+        else:
+            posts.update_one({"postID": postID}, {"$inc": {"likes": -1}})
+            posts.update_one({"postID": postID}, {"$pull": {"likedBy": usr}})
+            users.update_one({"username": usr}, {"$pull": {"liked_posts": postID}})
+        
+        post = posts.find_one()
+
+
+
+
+
+
 
 @socketio.on('directMessage')
 def DM(data):
