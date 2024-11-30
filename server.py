@@ -36,7 +36,7 @@ def on_connect():
     else:
         emit("invalidLOGIN", {"message": "did not connect to websocket"})
 
-@socketio.on('message')
+@socketio.on('makePost')
 def WS_message(data):
     username = session.get('username')
     if username:
@@ -73,14 +73,17 @@ def likePost(data):
             posts.update_one({"postID": postID}, {"$pull": {"likedBy": usr}})
             users.update_one({"username": usr}, {"$pull": {"liked_posts": postID}})
         
-        post = posts.find_one()
+        post = posts.find_one({"postID": postID})
+        postVALUES = {
+            'postID':postID,
+            'likes':post.get('likes',0),
+            'likedBy':post.get('likedBy', [])
+        }
+        emit("updateLikeCount", postVALUES, broadcast= True)
 
 
 
-
-
-
-
+#work in progress
 @socketio.on('directMessage')
 def DM(data):
     sender = session.get('username')
