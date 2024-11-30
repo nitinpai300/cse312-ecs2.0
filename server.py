@@ -7,6 +7,9 @@ import uuid
 import os
 import hashlib
 
+from flask_socketio import SocketIO, emit, join_room, leave_room
+from collections import defaultdict
+
 app = Flask(__name__)
 mongo_client = MongoClient("mongo")
 db = mongo_client["ECS"]
@@ -14,6 +17,22 @@ users = db["users"]
 tokens = db["tokens"]
 posts = db["posts"]
 app.secret_key = 'a'  # tbh i'm not sure what this is for again -chris
+
+
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+rooms_users = defaultdict(set)
+
+
+@socketio.on('connect', namespace='')
+def on_connect():
+    #return auth, usr, XS
+    authenticationTOKEN = request.cookies.get("authenticationTOKEN", "")
+    auth, usr, xsrf = authenticate(authenticationTOKEN)
+    if auth:
+        print(f'{usr} connected to websocket')
+        emit("validLOGIN", {"username": usr})
+    else:
+        emit("invalidLOGIN", {"message": "did not connect to websocket"})
 
 
 # routing index.html
