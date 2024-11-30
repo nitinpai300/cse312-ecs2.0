@@ -23,7 +23,7 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 rooms_users = defaultdict(set)
 
 
-@socketio.on('connect', namespace='')
+@socketio.on('connect')
 def on_connect():
     #return auth, usr, XS
     authenticationTOKEN = request.cookies.get("authenticationTOKEN", "")
@@ -33,6 +33,14 @@ def on_connect():
         emit("validLOGIN", {"username": usr})
     else:
         emit("invalidLOGIN", {"message": "did not connect to websocket"})
+
+@socketio.on('message')
+def WS_message():
+    #send mssg with emit
+    #find username from list, emit message from request[message] -> currently psuedocode
+    username = users.get("username", "Guest")
+    emit('message', {'user': username, 'message': request.get_json()['message']}, broadcast=True)
+
 
 
 # routing index.html
@@ -207,7 +215,8 @@ def set_response_headers(response):
 
 
 if __name__ == '__main__':
-    app.run(port=8080, host="0.0.0.0")
+    socketio.run(app, host='0.0.0.0', port=8080, debug=True)
+    #app.run(port=8080, host="0.0.0.0")
 #
 
 
