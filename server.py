@@ -22,26 +22,31 @@ app.secret_key = 'a'  # tbh i'm not sure what this is for again -chris
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 rooms_users = defaultdict(set)
 
-
+#----------WEBSOCKET--------------------------------------------------------------
 @socketio.on('connect')
 def on_connect():
-    #return auth, usr, XS
     authenticationTOKEN = request.cookies.get("authenticationTOKEN", "")
     auth, usr, xsrf = authenticate(authenticationTOKEN)
     if auth:
-        print(f'{usr} connected to websocket')
+        session['username'] = usr
         emit("validLOGIN", {"username": usr})
     else:
         emit("invalidLOGIN", {"message": "did not connect to websocket"})
 
 @socketio.on('message')
-def WS_message():
-    #send mssg with emit
-    #find username from list, emit message from request[message] -> currently psuedocode
+def WS_message(data):
     username = session.get('username')
-    emit('message', {'user': username, 'message': request.get_json()['message']}, broadcast=True)
+    if username:
+        m = data.get('message', '')
+        emit('message', {'user': username, 'message': m}, broadcast=True)
+        #emit('message', {'user': username, 'message': request.get_json()['message']}, broadcast=True)
 
+@socketio.on('disconnect')
+def on_disconnect():
+    username = session.get('username')
+    print(f'{username} left chat')
 
+#--------------------------------------------------------------------------------------
 
 # routing index.html
 @app.route('/', methods=["GET", "POST"])
