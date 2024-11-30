@@ -48,6 +48,7 @@ def on_disconnect():
     username = session.get('username')
     if username:
         currentUSERLST.pop(username)
+        emit("userLIST", list(currentUSERLST.keys()), broadcast=True)
     print(f'{username} left chat')
 
 #--------------------------------------------------------------------------------------
