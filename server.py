@@ -46,18 +46,11 @@ def WS_message(data):
 @socketio.on('directMessage')
 def DM(data):
     sender = session.get('username')
-    reciever = data.get()
-    message = data.get("message")
-    '''
-    sender = local user's username info
-    reciver = the username from the user list
-    message = explanatory
-    sender sends message to reciever, not sure how to get reciever
-    '''
+    reciever = data.get('recipient')
+    message = data.get('message')
     if reciever in currentUSERLST:
-        #recieverSID = get reciever socket id
-        #emit something set_response_headers
-        next
+        recieverSID = currentUSERLST[reciever]
+        emit('directMessage', {'user': sender, 'message': message}, room=recieverSID)
     else:
         emit('invalidDM', {'message': f'{reciever} cannot take direct message or is offline'})
 
@@ -69,7 +62,6 @@ def on_disconnect():
     if username:
         currentUSERLST.pop(username)
         emit("userLIST", list(currentUSERLST.keys()), broadcast=True)
-    #print(f'{username} left chat')
 
 #--------------------------------------------------------------------------------------
 
