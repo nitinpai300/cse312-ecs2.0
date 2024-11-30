@@ -38,7 +38,7 @@ def on_connect():
 def WS_message():
     #send mssg with emit
     #find username from list, emit message from request[message] -> currently psuedocode
-    username = users.get("username", "Guest")
+    username = session.get('username')
     emit('message', {'user': username, 'message': request.get_json()['message']}, broadcast=True)
 
 
