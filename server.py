@@ -40,7 +40,12 @@ def WS_message(data):
     username = session.get('username')
     if username:
         post_content = data.get('post_content')
-        filename = data.get('filename', "")
+        file = request.files.get("upload")
+        filename = ""
+        if file:
+            filename = f"static/images/{str(uuid.uuid4())}.jpg"
+            with open(filename, "wb") as f:
+                f.write(file.read())
         PID = str(uuid.uuid4())
         posts.insert_one({"postID": PID, "author": username, "post_content": post_content, "filename": filename, "likes": 0, "likedBy": []})
         postVALUES = {
