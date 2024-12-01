@@ -27,6 +27,10 @@ socket.on('postINFO', function (data) {
 
 //if like count exists, set like count equal to thelike count from post
 socket.on('updateLikeCount', function (data) {
+    const likeCountHTML = document.getElementById(`likeCount-${data.postID}`);
+    if (likeCountHTML) {
+        likeCountHTML.textContent = data.likes;
+    }
 });
 
 socket.on('directMessage', function (data) {
