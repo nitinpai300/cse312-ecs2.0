@@ -11,6 +11,9 @@ socket.on('invalidLOGIN', function (data) {
 
 //need work done
 socket.on('postINFO', function (data) {
+    //dan this is suppose to get the values form the div where post is handled
+    // so getElementbyid(posts) or whatever the name is in feed.html
+    //maybe make a new div for every new post?
 });
 
 //if like count exists, set like count equal to thelike count from post
