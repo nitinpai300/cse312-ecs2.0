@@ -10,7 +10,9 @@ Please make an account first, go to the feed page, and then try uploading an ima
 Web socket interactions are done via likes. When a user likes a post, this info is updated in real time across all logged in users 
 
 **FOR OBJECTIVE 3:** 
-Please navigate to https://environmentcritic.me (or http to test https security). If you upload images, please do NOT upload anything too large. Image uploads do work, but nginx is not very friendly with 5mb+ images. We will address this for our presentation. 
+Please navigate to https://environmentcritic.me (or http to test https security). If you upload images, please do NOT upload anything too large. Image uploads do work, but nginx is not very friendly with 5mb+ images. We will address this for our presentation. PLEASE DISREGARD THE DOCKERCOMPOSE DB ONLY FILE, IT IS NOT BEING USED AND WE DO NOT HAVE IT ON OUR DEPLOYED SERVER! 
+![image](https://github.com/user-attachments/assets/4c73e4ee-31bb-41ea-9c9b-a78c385d497f)
+
 
 **DISCLAIMER:** Share and Comments do NOT work, we're considering these as future features.
 
