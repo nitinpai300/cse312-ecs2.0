@@ -51,38 +51,16 @@ def feed():
 
 @socketio.on('connect')
 def on_connect():
-    print("got here")
+
     authenticationTOKEN = request.cookies.get("authenticationTOKEN", "")
     auth, usr, xsrf = authenticate(authenticationTOKEN)
     print("authed", usr)
     if auth:
+        session['username'] = usr
+        currentUSERLST[usr] =  request.sid
         emit('my response',
-             {'message': '{0} has joined'.format(usr)},
-             broadcast=True)
+             {'message': '{0} has joined'.format(usr)})
 
-@socketio.on('makePost')
-def WS_message(data):
-    username = session.get('username')
-    if username:
-        post_content = data.get('post_content')
-        file = request.files.get("upload")
-        filename = ""
-        if file:
-            filename = f"static/images/{str(uuid.uuid4())}.jpg"
-            with open(filename, "wb") as f:
-                f.write(file.read())
-        PID = str(uuid.uuid4())
-        posts.insert_one({"postID": PID, "author": username, "post_content": post_content, "filename": filename, "likes": 0, "likedBy": []})
-        postVALUES = {
-            'postID':PID,
-            'author':username,
-            'post_content':post_content,
-            'filename':filename,
-            'likes':0,
-            'likedBy':[],
-        }
-        socketio.emit('postINFO', postVALUES, broadcast= True)
-        
 
 @socketio.on('likePost')
 def likePost(data):
@@ -105,10 +83,12 @@ def likePost(data):
         post = posts.find_one({"postID": postID})
         postVALUES = {
             'postID':postID,
-            'likes':post.get('likes',0),
+            'likes':post.get('likes', 0),
             'likedBy':post.get('likedBy', [])
         }
-        socketio.emit("updateLikeCount", postVALUES, broadcast= True)
+        postVALUES["likedBy"] = "Liked by " + " ".join(postVALUES["likedBy"])
+        print(postVALUES)
+        socketio.emit("updateLikeCount", postVALUES)
 
 
 
