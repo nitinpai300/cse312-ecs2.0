@@ -1,14 +1,14 @@
 
-
-//if like count exists, set like count equal to the like count from post
-socket.on('updateLikeCount', function (data) {
-    const likeCountHTML = document.getElementById(`likeCount-${data.postID}`);
-    if (likeCountHTML) {
-        likeCountHTML.textContent = data.likes;
-    }
-});
-
-
+//
+// //if like count exists, set like count equal to the like count from post
+// socket.on('updateLikeCount', function (data) {
+//     const likeCountHTML = document.getElementById(`likeCount-${data.postID}`);
+//     if (likeCountHTML) {
+//         likeCountHTML.textContent = data.likes;
+//     }
+// });
+//
+//
 
 //button functionality somewhere here
 
@@ -25,3 +25,6 @@ function displayText() {
 }
 
 
+function updateLikes(){
+
+}

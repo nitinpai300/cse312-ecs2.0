@@ -5,7 +5,7 @@ import secrets
 import uuid
 import os
 import hashlib
-
+import eventlet
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from collections import defaultdict
 
@@ -81,7 +81,7 @@ def WS_message(data):
             'likes':0,
             'likedBy':[],
         }
-        emit('postINFO', postVALUES, broadcast= True)
+        socketio.emit('postINFO', postVALUES, broadcast= True)
         
 
 @socketio.on('likePost')
@@ -108,7 +108,7 @@ def likePost(data):
             'likes':post.get('likes',0),
             'likedBy':post.get('likedBy', [])
         }
-        emit("updateLikeCount", postVALUES, broadcast= True)
+        socketio.emit("updateLikeCount", postVALUES, broadcast= True)
 
 
 
@@ -249,9 +249,8 @@ def set_response_headers(response):
     return response
 
 
-if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=8080, debug=True)
-    #app.run(port=8080, host="0.0.0.0")
+socketio.run(app, host='0.0.0.0', port=8080, debug=True)
+
 #
 
 
