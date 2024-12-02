@@ -86,7 +86,8 @@ def likePost(data):
             'likes':post.get('likes', 0),
             'likedBy':post.get('likedBy', [])
         }
-        postVALUES["likedBy"] = "Liked by " + " ".join(postVALUES["likedBy"])
+        postVALUES["likedBy"] = "Liked by: " + " ".join(postVALUES["likedBy"])
+        postVALUES["likes"] = "Likes: " + f'{postVALUES["likes"]}'
         print(postVALUES)
         socketio.emit("updateLikeCount", postVALUES)
 
