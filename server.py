@@ -1,20 +1,105 @@
 from flask import Flask, render_template, make_response, request, flash, redirect, url_for, session
 from pymongo import MongoClient
 import bcrypt
-import hashlib
 import secrets
 import uuid
 import os
 import hashlib
+import eventlet
+from flask_socketio import SocketIO, emit, join_room, leave_room
+from collections import defaultdict
 
 app = Flask(__name__)
-mongo_client = MongoClient("mongo")
+docker_db = os.environ.get("DOCKER_DB", "false")
+if docker_db == "true":
+    print("Using docker database")
+    mongo_client = MongoClient("mongo")
+else:
+    print("Using local database")
+    mongo_client = MongoClient("localhost")
+
 db = mongo_client["ECS"]
 users = db["users"]
 tokens = db["tokens"]
 posts = db["posts"]
 app.secret_key = 'a'  # tbh i'm not sure what this is for again -chris
 
+
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+rooms_users = defaultdict(set)
+currentUSERLST = {}
+#----------WEBSOCKET--------------------------------------------------------------
+
+@app.route("/feed", methods=['POST', 'GET'])
+def feed():
+    if request.method == 'POST':
+        user_authtoken = request.cookies.get("authenticationTOKEN")
+        auth, user, xsrf = authenticate(user_authtoken)
+        post_content = request.form['post_content']
+        # save image to disk - by chris j
+        filename = ""
+        if "upload" in request.files:
+            file = request.files["upload"]
+            filename = f"static/images/{str(uuid.uuid4())}.jpg"
+            with open(filename, "wb") as f:
+                f.write(file.read())
+        posts.insert_one({"postID": str(uuid.uuid4()), "author": user, "post_content": post_content, "filename": filename, "likes": 0, "likedBy": []})
+        return redirect(url_for('feed'))
+    else:
+        getPosts = posts.find()
+        return render_template('feed.html', posts=getPosts)
+
+@socketio.on('connect')
+def on_connect():
+
+    authenticationTOKEN = request.cookies.get("authenticationTOKEN", "")
+    auth, usr, xsrf = authenticate(authenticationTOKEN)
+    print("authed", usr)
+    if auth:
+        session['username'] = usr
+        currentUSERLST[usr] =  request.sid
+        emit('my response',
+             {'message': '{0} has joined'.format(usr)})
+
+
+@socketio.on('likePost')
+def likePost(data):
+    postID = data.get('postID')
+    user_authtoken = request.cookies.get("authenticationTOKEN")
+    auth, usr, xsrf = authenticate(user_authtoken)
+    if auth:
+        user = users.find_one({"username": usr})
+        liked_posts = user.get("liked_posts", [])
+        #copy and pasted if postID ...
+        if postID not in liked_posts:
+            posts.update_one({"postID": postID}, {"$inc": {"likes": 1}})
+            posts.update_one({"postID": postID}, {"$push": {"likedBy": usr}})
+            users.update_one({"username": usr}, {"$push": {"liked_posts": postID}})
+        else:
+            posts.update_one({"postID": postID}, {"$inc": {"likes": -1}})
+            posts.update_one({"postID": postID}, {"$pull": {"likedBy": usr}})
+            users.update_one({"username": usr}, {"$pull": {"liked_posts": postID}})
+        
+        post = posts.find_one({"postID": postID})
+        postVALUES = {
+            'postID':postID,
+            'likes':post.get('likes', 0),
+            'likedBy':post.get('likedBy', [])
+        }
+        postVALUES["likedBy"] = "Liked by " + " ".join(postVALUES["likedBy"])
+        print(postVALUES)
+        socketio.emit("updateLikeCount", postVALUES)
+
+
+
+@socketio.on('disconnect')
+def on_disconnect():
+    username = session.get('username')
+    if username:
+        currentUSERLST.pop(username)
+        emit("userLIST", list(currentUSERLST.keys()), broadcast=True)
+
+#--------------------------------------------------------------------------------------
 
 # routing index.html
 @app.route('/', methods=["GET", "POST"])
@@ -138,57 +223,14 @@ def logout():
     return response
 
 
-@app.route("/feed", methods=['POST', 'GET'])
-def feed():
-    if request.method == 'POST':
-        user_authtoken = request.cookies.get("authenticationTOKEN")
-        auth, user, xsrf = authenticate(user_authtoken)
-        post_content = request.form['post_content']
-        # save image to disk - by chris j
-        filename = ""
-        if "upload" in request.files:
-            file = request.files["upload"]
-            filename = f"static/images/{str(uuid.uuid4())}.jpg"
-            with open(filename, "wb") as f:
-                f.write(file.read())
-        posts.insert_one({"postID": str(uuid.uuid4()), "author": user, "post_content": post_content, "filename": filename, "likes": 0, "likedBy": []})
-        return redirect(url_for('feed'))
-    else:
-        getPosts = posts.find()
-        return render_template('feed.html', posts=getPosts)
-
-
-@app.route("/like", methods=['POST'])
-def likePost():
-    # Retrieve the messageId from the request body
-    postID = request.json.get('postID')
-    # check if post is in user's liked posts database column
-    user_authtoken = request.cookies.get("authenticationTOKEN")
-    auth, usr, xsrf = authenticate(user_authtoken)
-    user = users.find_one({"username": usr})
-    liked_posts = user.get("liked_posts")
-    # if it isnt, increment the post's likes column by 1 and add the post to user's liked posts column
-    if postID not in liked_posts:
-        posts.update_one({"postID": postID}, {"$inc": {"likes": 1}})
-        posts.update_one({"postID": postID}, {"$push": {"likedBy": usr}})
-        users.update_one({"username": usr}, {"$push": {"liked_posts": postID}})
-        return redirect(url_for('feed'))
-    # else, subtract one like from the post and remove it from user's liked posts data column
-    else:
-        posts.update_one({"postID": postID}, {"$inc": {"likes": -1}})
-        posts.update_one({"postID": postID}, {"$pull": {"likedBy": usr}})
-        users.update_one({"username": usr}, {"$pull": {"liked_posts": postID}})
-        return redirect(url_for('feed'))
-
-
 @app.after_request
 def set_response_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
     return response
 
 
-if __name__ == '__main__':
-    app.run(port=8080, host="0.0.0.0")
+socketio.run(app, host='0.0.0.0', port=8080, debug=True)
+
 #
 
 

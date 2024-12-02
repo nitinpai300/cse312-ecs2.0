@@ -7,6 +7,21 @@
     <link rel="stylesheet" type="text/css" href="/static/css/styles.css"/>
 </head>
 <script type = "text/javascript" src="static/js/functions.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+<script type="text/javascript" charset="utf-8">
+    var socket = io({autoConnect: false});
+    socket.connect();
+        socket.on('connect', function() {
+        socket.emit('my event', {data: 'I\'m connected!'});
+    });
+    socket.on('updateLikeCount', function (data) {
+        console.log(data)
+
+        var post = document.getElementById(data["postID"]).children
+        post[2].innerHTML = data["likes"]
+        post[3].innerHTML = data["likedBy"]
+    });
+</script>
 <body>
     <header>
         <img src="static/images/images.jpeg" alt=""><h1>The Feed  </h1>
@@ -30,7 +45,7 @@
         <section id="posts-section">
             <h3>Recent Posts</h3>
             {% for post in posts %}
-                <div class="post">
+                <div class="post" id={{ post.postID }}>
                     <p><strong>{{ post.author }}:</strong> {{ post.post_content }}</p>
                     <!--UNCOMMENT THIS TO SEE THE POST'S ID ON THE WEB PAGE
                     <p>{{ post.postID }}</p>
