@@ -23,6 +23,15 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 rooms_users = defaultdict(set)
 currentUSERLST = {}
 #----------WEBSOCKET--------------------------------------------------------------
+
+@app.route("/feed", methods=['POST', 'GET'])
+def feed():
+    authenticationTOKEN = request.cookies.get("authenticationTOKEN", "none")
+    auth, usr, xsrf = authenticate(authenticationTOKEN)
+    if auth:
+        return render_template("feed.html", username=usr)
+    return redirect(url_for("login_p"))
+
 @socketio.on('connect')
 def on_connect():
     authenticationTOKEN = request.cookies.get("authenticationTOKEN", "")
@@ -85,23 +94,6 @@ def likePost(data):
         }
         emit("updateLikeCount", postVALUES, broadcast= True)
 
-
-@socketio.on('getUserList')
-def activeUsers():
-    emit("userLIST", list(currentUSERLST.keys())) 
-
-
-#work in progress
-@socketio.on('directMessage')
-def DM(data):
-    sender = session.get('username')
-    reciever = data.get('recipient')
-    message = data.get('message')
-    if reciever in currentUSERLST:
-        recieverSID = currentUSERLST[reciever]
-        emit('directMessage', {'user': sender, 'message': message}, room=recieverSID)
-    else:
-        emit('invalidDM', {'message': f'{reciever} cannot take direct message or is offline'})
 
 
 @socketio.on('disconnect')
