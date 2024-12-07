@@ -4,76 +4,48 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Feed</title>
-    <link rel="stylesheet" type="text/css" href="/static/css/styles.css"/>
+    <link rel="stylesheet" type="text/css" href="/static/css/styles.css" />
 </head>
-<script type = "text/javascript" src="static/js/functions.js"></script>
+<script type="text/javascript" src="static/js/functions.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
 <script type="text/javascript" charset="utf-8">
-    var socket = io({autoConnect: false});
+    var socket = io({ autoConnect: false });
     socket.connect();
-        socket.on('connect', function() {
-        socket.emit('my event', {data: 'I\'m connected!'});
+
+    // Listen for updates to the feed
+    socket.on('updateFeed', function (data) {
+        console.log("Feed updated:", data);
+        updateFeedUI(data.posts);
     });
+
+    // Listen for updated like counts
     socket.on('updateLikeCount', function (data) {
-        console.log(data)
-
-        var post = document.getElementById(data["postID"]).children
-        post[2].innerHTML = data["likes"]
-        post[3].innerHTML = data["likedBy"]
-    });
-
-    socket.on('updateTimeRemaining', function(data) {
-        const postContainer = document.getElementById(data.postID);
-        if (postContainer) {
-            const countdownDisplay = postContainer.querySelector('.time-remaining');
-            if (countdownDisplay) {
-                countdownDisplay.innerHTML = `Time Remaining: ${data.timeRemaining}`;
-            }
+        console.log(data);
+        const postElement = document.getElementById(data["postID"]);
+        if (postElement) {
+            postElement.querySelector(".likes").textContent = data["likes"];
+            postElement.querySelector(".likedBy").textContent = data["likedBy"];
         }
     });
 </script>
-
 <body>
     <header>
         <img src="static/images/images.jpeg" alt="">
-        <h1>The Feed</h1>
+        <h1>jim branch</h1>
         <p>Welcome, {{ username }}! <a href="/logout">Logout!</a></p>
         <li><a href="/">Home</a></li>
     </header>
-
-    <!-- Section for scheduling a new post -->
     <section id="post-creation">
-        <h2>Schedule a Post</h2>
-        <form action="/feed" method="POST" enctype="multipart/form-data">
-            <textarea name="post_content" placeholder="CREATE A POST BY TYPING HERE......"></textarea>
-            <input type="file" name="upload">
-            <button type="submit">Submit</button>
-            <label>Schedule Time: </label>
-            <input type="datetime-local" name="timeTOpost" required>
-        </form>
+        <h2>Create a Post</h2>
+        <textarea id="post-content" placeholder="CREATE A POST BY TYPING HERE......"></textarea>
+        <input type="file" id="upload">
+        <button onclick="createPost()">Post</button>
     </section>
-
-    <div id="time-remaining-container"></div>
-
-    <!-- Section for Recent Posts -->
     <section id="posts-section">
         <h3>Recent Posts</h3>
-        {% for post in posts %}
-            <div class="post" id="{{ post.postID }}">
-                <p><strong>{{ post.author }}:</strong> {{ post.post_content }}</p>
-                <img src="{{ post.filename }}" />
-                <p>Likes: {{ post.likes }}</p>
-                <p>Liked by: {{ ", ".join(post.likedBy) }}</p>
-                <p class="time-remaining">Waiting...</p>
-            </div>
-            <div class="post-actions">
-                <button class="like" onclick="likeMessage('{{ post.postID }}')">Like</button>
-                <button class="share">Share</button>
-                <button class="comment">Comment</button>
-            </div>
-        {% else %}
-            <p>No posts yet. Be the first to share something!</p>
-        {% endfor %}
+        <div id="feed-container">
+            <!-- Posts will be dynamically loaded here -->
+        </div>
     </section>
 </body>
 </html>

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, make_response, request, flash, redirect, url_for, session, jsonify
+from flask import Flask, render_template, make_response, request, flash, redirect, url_for, session
 from pymongo import MongoClient
 import bcrypt
 import secrets
@@ -8,8 +8,6 @@ import hashlib
 import eventlet
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from collections import defaultdict
-import time
-from datetime import datetime, timedelta, timezone
 
 app = Flask(__name__)
 docker_db = os.environ.get("DOCKER_DB", "false")
@@ -24,79 +22,63 @@ db = mongo_client["ECS"]
 users = db["users"]
 tokens = db["tokens"]
 posts = db["posts"]
-app.secret_key = 'a'  
+app.secret_key = 'a'  # tbh i'm not sure what this is for again -chris
 
 
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 rooms_users = defaultdict(set)
 currentUSERLST = {}
-#----------WEBSOCKET--------------------------------------------------------------
 
-@app.route("/feed", methods=['POST', 'GET'])
-def feed():
-    if request.method == 'POST':
-        user_authtoken = request.cookies.get("authenticationTOKEN")
-        auth, user, xsrf = authenticate(user_authtoken)
-        post_content = request.form['post_content']
-        time = request.form['timeTOpost']
-        # save image to disk - by chris j
+
+
+@socketio.on('newPost')
+def handle_new_post(data):
+    user_authtoken = request.cookies.get("authenticationTOKEN")
+    auth, user, xsrf = authenticate(user_authtoken)
+    if auth:
+        post_content = data.get('post_content', '')
         filename = ""
-        if "upload" in request.files:
-            file = request.files["upload"]
+        if 'upload' in data:
+            image_data = data['upload']
             filename = f"static/images/{str(uuid.uuid4())}.jpg"
             with open(filename, "wb") as f:
-                f.write(file.read())
+                f.write(image_data)
+        post_id = str(uuid.uuid4())
         posts.insert_one({
-            "postID": str(uuid.uuid4()),
+            "postID": post_id,
             "author": user,
             "post_content": post_content,
             "filename": filename,
             "likes": 0,
-            "likedBy": [],
-            "isPublic": False,
-            "timeTOpost": time
-            })
-        return redirect(url_for('feed'))
+            "likedBy": []
+        })
+        updated_posts = list(posts.find())
+        for post in updated_posts:
+            post['_id'] = str(post['_id'])
+        socketio.emit('updateFeed', {"posts": updated_posts}, namespace="/")
     else:
-        userPosts = posts.find({"author": session.get('username')})
-        publicPosts = posts.find({"public": True})
-        getPosts = list(publicPosts) + list(userPosts)
-        return render_template('feed.html', posts=getPosts)
+        emit('error', {'message': 'Authentication failed'})
+
+
+@socketio.on('requestFeed')
+def send_feed():
+    get_posts = list(posts.find())
+    for post in get_posts:
+        post['_id'] = str(post['_id'])
+    emit('updateFeed', {"posts": get_posts})
+
     
-def schedulePostSystem():
-    while True:
-        timeRN = datetime.now(timezone.utc)
-        tobePosted = posts.find({"isPublic": False})
-        format_data = "%m/%d/%Y %H:%M:%S"
-        for post in tobePosted:
-            postID = post['postID']
-            postAuther = post['author']
-            timeToSendpost = datetime.fromisoformat(post["timeTOpost"])
-
-            print("Current UTC Time:", timeRN)
-            print("Scheduled Time:", timeToSendpost)
-            
-            if timeRN >= timeToSendpost:
-                posts.update_one({"postID": postID}, {"$set": {"isPublic": True}})
-                if postAuther in currentUSERLST:
-                    socketio.emit("postPublished", {"postID": postID, "message": " post is now public"})
-            else:
-                time_remaining = (timeToSendpost - timeRN).total_seconds()
-                if postAuther in currentUSERLST:
-                    socketio.emit("updateTimeRemaining", {"postID": postID, "timeRemaining": f"{int(time_remaining)} seconds remaining"})
-        time.sleep(1)
-socketio.start_background_task(schedulePostSystem)
-
-
 @socketio.on('connect')
 def on_connect():
+
     authenticationTOKEN = request.cookies.get("authenticationTOKEN", "")
     auth, usr, xsrf = authenticate(authenticationTOKEN)
     print("authed", usr)
     if auth:
         session['username'] = usr
         currentUSERLST[usr] =  request.sid
-        emit('my response', {'message': '{0} has joined'.format(usr)})
+        emit('my response',
+             {'message': '{0} has joined'.format(usr)})
 
 
 @socketio.on('likePost')
@@ -137,7 +119,6 @@ def on_disconnect():
         currentUSERLST.pop(username)
         emit("userLIST", list(currentUSERLST.keys()), broadcast=True)
 
-#--------------------------------------------------------------------------------------
 
 # routing index.html
 @app.route('/', methods=["GET", "POST"])
@@ -212,6 +193,15 @@ def signup():
     response.status_code = 204
     return response
 
+@app.route("/feed", methods=["GET"])
+def feed():
+    user_authtoken = request.cookies.get("authenticationTOKEN")
+    auth, user, xsrf = authenticate(user_authtoken)
+    if auth:
+        getPosts = posts.find()
+        return render_template('feed.html', posts=getPosts, username=user)
+    else:
+        return redirect(url_for('login_p'))
 
 
 def authenticate(token, xsrf=None):
@@ -270,5 +260,3 @@ def set_response_headers(response):
 socketio.run(app, host='0.0.0.0', port=8080, debug=True)
 
 #
-
-
