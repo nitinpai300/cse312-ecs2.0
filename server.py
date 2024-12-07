@@ -71,7 +71,11 @@ def schedulePostSystem():
         for post in tobePosted:
             postID = post['postID']
             postAuther = post['author']
-            timeToSendpost = datetime.strptime(post["timeTOpost"], format_data)
+            timeToSendpost = datetime.fromisoformat(post["timeTOpost"])
+
+            print("Current UTC Time:", timeRN)
+            print("Scheduled Time:", timeToSendpost)
+            
             if timeRN >= timeToSendpost:
                 posts.update_one({"postID": postID}, {"$set": {"isPublic": True}})
                 if postAuther in currentUSERLST:
