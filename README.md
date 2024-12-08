@@ -1,19 +1,21 @@
 # cse312-ecs2.0
 A group with the four best CS Majors West of the Mississippi.
 
-**SOME NOTES FOR PROJECT PART 2**
+**SOME NOTES FOR PROJECT PART 3**
 
 **FOR OBJECTIVE 1:**
-Please make an account first, go to the feed page, and then try uploading an image in addition to your message (not too large please!!) to test. 
+Please make an account first, go to the feed page, and immediately after the page is loaded, the viewer should see:
+User THE_CURRENT_USER'S_NAME Active for: _ seconds | Inactive for: _ seconds
+the "active" timer will continue to check how long a user is currently active UNLESS:
+* Mouse does not move on the tab after 10 seconds
+* The tab is not focused after 10 seconds
+After a user's state is "inactive" the "inactive" timer will incremement by seconds up until the system recognizes
+mouse movement on the webpage.
+
 
 **FOR OBJECTIVE 2:**
-Web socket interactions are done via likes. When a user likes a post, this info is updated in real-time across all logged-in users.
 
 **FOR OBJECTIVE 3:** 
-Please navigate to https://environmentcritic.me (or http to test https security). If you upload images, please do NOT upload anything too large. Image uploads do work, but nginx is not very friendly with 5mb+ images. We will address this in our presentation. 
-
-**PLEASE DISREGARD THE DOCKERCOMPOSE DB-ONLY FILE, IT IS NOT BEING USED AND WE DO NOT HAVE IT ON OUR DEPLOYED SERVER! **
-![image](https://github.com/user-attachments/assets/4c73e4ee-31bb-41ea-9c9b-a78c385d497f)
 
 
 **DISCLAIMER:** Share and Comments do NOT work, we're considering these as future features.
