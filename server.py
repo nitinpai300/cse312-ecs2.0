@@ -8,6 +8,7 @@ import hashlib
 import eventlet
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from collections import defaultdict
+from datetime import datetime
 
 app = Flask(__name__)
 docker_db = os.environ.get("DOCKER_DB", "false")
@@ -28,9 +29,10 @@ app.secret_key = 'a'  # tbh i'm not sure what this is for again -chris
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 rooms_users = defaultdict(set)
 currentUSERLST = {}
+userActive = {}
 
 
-
+#====WEBSOCKET FEED====WEBSOCKET FEED====WEBSOCKET FEED====WEBSOCKET FEED====WEBSOCKET FEED====WEBSOCKET FEED====WEBSOCKET FEED====WEBSOCKET FEED
 @socketio.on('newPost')
 def handle_new_post(data):
     user_authtoken = request.cookies.get("authenticationTOKEN")
@@ -67,18 +69,6 @@ def send_feed():
         post['_id'] = str(post['_id'])
     emit('updateFeed', {"posts": get_posts})
 
-    
-@socketio.on('connect')
-def on_connect():
-
-    authenticationTOKEN = request.cookies.get("authenticationTOKEN", "")
-    auth, usr, xsrf = authenticate(authenticationTOKEN)
-    print("authed", usr)
-    if auth:
-        session['username'] = usr
-        currentUSERLST[usr] =  request.sid
-        emit('my response',
-             {'message': '{0} has joined'.format(usr)})
 
 
 @socketio.on('likePost')
@@ -110,17 +100,86 @@ def likePost(data):
         print(postVALUES)
         socketio.emit("updateLikeCount", postVALUES)
 
+#====WEBSOCKET FEED====WEBSOCKET FEED====WEBSOCKET FEED====WEBSOCKET FEED====WEBSOCKET FEED====WEBSOCKET FEED====WEBSOCKET FEED====WEBSOCKET FEED
+
+#====ACTIVE/INACTIVE====ACTIVE/INACTIVE====ACTIVE/INACTIVE====ACTIVE/INACTIVE====ACTIVE/INACTIVE====ACTIVE/INACTIVE====ACTIVE/INACTIVE
+@socketio.on('connect')
+def on_connect():
+    authenticationTOKEN = request.cookies.get("authenticationTOKEN", "")
+    auth, usr, xsrf = authenticate(authenticationTOKEN)
+
+    if auth:
+        userActive[request.sid] = {
+            "username": usr,
+            "last_active": datetime.now(),
+            "active_time": 0,
+            "inactive_time": 0,
+            "inactive": False
+        }
+        emit('my response', {'message': f'{usr} has joined'})
+        #start timer
+        if not hasattr(backgroundTIMER, "_task_started"):
+            backgroundTIMER._task_started = True
+            socketio.start_background_task(target=backgroundTIMER)
+
+
+@socketio.on('userActive')
+def on_userActive():
+    if request.sid in userActive:
+        user_data = userActive[request.sid]
+        if user_data["inactive"]:
+            #make inactive user "active"
+            inactive_duration = (datetime.now() - user_data["last_active"]).total_seconds()
+            user_data["inactive_time"] += inactive_duration
+        user_data["inactive"] = False
+        user_data["last_active"] = datetime.now()  # Reset last active time
+
+
+@socketio.on('userInactive')
+def on_userInactive():
+    if request.sid in userActive:
+        user_data = userActive[request.sid]
+        if not user_data["inactive"]:  #if user active but check inactive bc checking active errors
+            #make active user "inactive"
+            active_duration = (datetime.now() - user_data["last_active"]).total_seconds()
+            user_data["active_time"] += active_duration
+        user_data["inactive"] = True
+        user_data["last_active"] = datetime.now()
+
+
+def backgroundTIMER():
+    while True:
+        for user_sid, data in userActive.items():
+            if not data["inactive"]:
+                active_duration = (datetime.now() - data["last_active"]).total_seconds()
+                data["active_time"] += active_duration
+                data["last_active"] = datetime.now()
+            else:
+                inactive_duration = (datetime.now() - data["last_active"]).total_seconds()
+                data["inactive_time"] += inactive_duration
+                data["last_active"] = datetime.now()
+
+        #ws emit times 
+        active_inactive_times = {
+            data["username"]: {
+                "active_time": round(data["active_time"], 2),
+                "inactive_time": round(data["inactive_time"], 2)
+            }
+            for user_sid, data in userActive.items()
+        }
+        socketio.emit('updateUserActivity', active_inactive_times)
+        eventlet.sleep(1)
 
 
 @socketio.on('disconnect')
 def on_disconnect():
-    username = session.get('username')
-    if username:
-        currentUSERLST.pop(username)
-        emit("userLIST", list(currentUSERLST.keys()), broadcast=True)
+    if request.sid in userActive:
+        del userActive[request.sid]
+#====ACTIVE/INACTIVE====ACTIVE/INACTIVE====ACTIVE/INACTIVE====ACTIVE/INACTIVE====ACTIVE/INACTIVE====ACTIVE/INACTIVE====ACTIVE/INACTIVE
 
 
-# routing index.html
+
+
 @app.route('/', methods=["GET", "POST"])
 def index():
     authenticationTOKEN = request.cookies.get("authenticationTOKEN", "none")

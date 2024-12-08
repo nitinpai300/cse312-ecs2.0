@@ -12,13 +12,22 @@
     var socket = io({ autoConnect: false });
     socket.connect();
 
-    // Listen for updates to the feed
+
+    socket.on('updateUserActivity', function(data) {
+    const activityContainer = document.getElementById('user-activity');
+    activityContainer.innerHTML = '';
+
+    for (const [username, times] of Object.entries(data)) {
+        const userItem = document.createElement('div');
+        userItem.textContent = `User ${username}: Active for: ${times.active_time.toFixed(2)} seconds | Inactive for: ${times.inactive_time.toFixed(2)} seconds`;
+        activityContainer.appendChild(userItem);
+    }});
+
     socket.on('updateFeed', function (data) {
         console.log("Feed updated:", data);
         updateFeedUI(data.posts);
     });
 
-    // Listen for updated like counts
     socket.on('updateLikeCount', function (data) {
         console.log(data);
         const postElement = document.getElementById(data["postID"]);
@@ -27,11 +36,14 @@
             postElement.querySelector(".likedBy").textContent = data["likedBy"];
         }
     });
+
+
+
 </script>
 <body>
     <header>
         <img src="static/images/images.jpeg" alt="">
-        <h1>jim branch</h1>
+        <h1>JIMS BRANCH DO NOT PUSH TO MAIN</h1>
         <p>Welcome, {{ username }}! <a href="/logout">Logout!</a></p>
         <li><a href="/">Home</a></li>
     </header>
@@ -44,8 +56,13 @@
     <section id="posts-section">
         <h3>Recent Posts</h3>
         <div id="feed-container">
-            <!-- Posts will be dynamically loaded here -->
+            <!--posts here-->
         </div>
+    </section>
+
+    <section id="user-activity">
+        <h3>User Activity</h3>
+        <!--activity time here-->
     </section>
 </body>
 </html>
