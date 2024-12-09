@@ -228,58 +228,54 @@ def logout():
 
 
 # DDOS PROT CODE BELOW
-request_timestamps = defaultdict(list) #timestamps for blocking code
-iplist = defaultdict(float)
+request_timestamps = defaultdict(list)
+blocked_ips = defaultdict(float)
 
 def get_ip():
     if 'X-Forwarded-For' in request.headers:
         return request.headers['X-Forwarded-For'].split(',')[0]
     return request.remote_addr
 
-
-
+# Prevent DoS attacks basic -Will
 @app.before_request
 def ip_requests():
-    clip = get_ip()
-    current_time = time()
+    if request.path != "/get_user_times":
+        clip = get_ip()
+        current_time = time()
 
-    if clip in iplist:
-        if current_time < iplist[clip]:
-            return jsonify({'error':"Too Many requests", "message": "Temp ban. wait 30 seconds."}), 429
-        else:
-            del iplist[clip]
+        if clip in blocked_ips and current_time - blocked_ips[clip] > 30:
+            del blocked_ips[clip]
 
-    # if clip in iplist:
-    #     abort(429, 'Too Many Requests')
+        if clip in blocked_ips:
+            abort(429, 'Too Many Requests: Please try again later.')
 
-    new_timestamps = []
-    for i in request_timestamps[clip]:
-        if current_time - i < 10:
-            new_timestamps.append(i)
-    request_timestamps[clip] = new_timestamps
+        updated_timestamps = []
+        for i in request_timestamps[clip]:
+            if current_time - i < 10:
+                updated_timestamps.append(i)
+        request_timestamps[clip] = updated_timestamps
 
-    request_timestamps[clip].append(current_time)
+        request_timestamps[clip].append(current_time)
 
-    if len(request_timestamps[clip]) > 50:
-        iplist[clip] = current_time +30
-        return jsonify({'error':"Too Many requests", "message": "Temp ban. wait 30 seconds."}), 429
+        if len(request_timestamps[clip]) > 50:
+            blocked_ips[clip] = current_time
+            abort(429, 'Too Many Requests: Please try again later.')
 
 @app.after_request
 def decrease_req(response):
     clip = request.remote_addr
     current_time = time()
-    new_timestamps = []
+    updated_timestamps = []
     for i in request_timestamps[clip]:
         if current_time - i < 10:
-            new_timestamps.append(i)
-    request_timestamps[clip] = new_timestamps
+            updated_timestamps.append(i)
+    request_timestamps[clip] = updated_timestamps
     return response
 
 @app.after_request
 def set_response_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
-    return response
-
+    return response 
 
 socketio.run(app, host='0.0.0.0', port=8080, debug=True)
 
