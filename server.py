@@ -261,16 +261,16 @@ def ip_requests():
             blocked_ips[clip] = current_time
             abort(429, 'Too Many Requests: Please try again later.')
 
-@app.after_request
-def decrease_req(response):
-    clip = request.remote_addr
-    current_time = time()
-    updated_timestamps = []
-    for i in request_timestamps[clip]:
-        if current_time - i < 10:
-            updated_timestamps.append(i)
-    request_timestamps[clip] = updated_timestamps
-    return response
+# @app.after_request
+# def decrease_req(response):
+#     clip = request.remote_addr
+#     current_time = time()
+#     updated_timestamps = []
+#     for i in request_timestamps[clip]:
+#         if current_time - i < 10:
+#             updated_timestamps.append(i)
+#     request_timestamps[clip] = updated_timestamps
+#     return response
 
 @app.after_request
 def set_response_headers(response):
