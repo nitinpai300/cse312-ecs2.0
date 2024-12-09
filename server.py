@@ -262,7 +262,8 @@ def feed():
     auth, user, xsrf = authenticate(user_authtoken)
     if auth:
         getPosts = posts.find()
-        return render_template('feed.html', posts=getPosts, username=user)
+        pfp = profiles.find_one({"username": user}).get("profile_picture")
+        return render_template('feed.html', posts=getPosts, username=user, pfp=pfp)
     else:
         return redirect(url_for('login_p'))
 
@@ -316,7 +317,8 @@ def profile():
         if request.method == "POST":
             pfp = profiles.find_one({"username": usr}).get("profile_picture")
             if "upload" in request.files:
-                os.remove(pfp)
+                if pfp != "/static/images/Default.jpg":
+                    os.remove(pfp)
                 file = request.files["upload"]
                 pfp = f"static/images/{str(uuid.uuid4())}.jpg"
                 with open(pfp, "wb") as f:
