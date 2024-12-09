@@ -9,6 +9,19 @@ import eventlet
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from collections import defaultdict
 from datetime import datetime
+from flask import Flask,render_template, make_response, request, flash, redirect, url_for, session, jsonify, abort
+import bcrypt
+from pymongo import MongoClient
+from time import time
+import secrets
+import hashlib
+import uuid
+import json
+from collections import defaultdict
+import socket
+import datetime
+from flask_socketio import SocketIO, emit
+
 
 app = Flask(__name__)
 docker_db = os.environ.get("DOCKER_DB", "false")
@@ -309,6 +322,49 @@ def logout():
     response = make_response(redirect('/'))
     return response
 
+request_timestamps = defaultdict(list) #timestamps for blocking code
+iplist = defaultdict(float)
+
+def get_ip():
+    if 'X-Forwarded-For' in request.headers:
+        return request.headers['X-Forwarded-For'].split(',')[0]
+    return request.remote_addr
+
+
+
+@app.before_request
+def ip_requests():
+    clip = get_ip()
+    current_time = time()
+
+    if clip in iplist and current_time - iplist[clip] > 30:
+        del iplist[clip]
+
+    if clip in iplist:
+        abort(429, 'Too Many Requests')
+
+    new_timestamps = []
+    for i in request_timestamps[clip]:
+        if current_time - i < 10:
+            new_timestamps.append(i)
+    request_timestamps[clip] = new_timestamps
+
+    request_timestamps[clip].append(current_time)
+
+    if len(request_timestamps[clip]) > 50:
+        iplist[clip] = current_time
+        abort(429, 'Too Many Requests')
+
+@app.after_request
+def decrease_req(response):
+    clip = request.remote_addr
+    current_time = time()
+    new_timestamps = []
+    for i in request_timestamps[clip]:
+        if current_time - i < 10:
+            new_timestamps.append(i)
+    request_timestamps[clip] = new_timestamps
+    return response
 
 @app.after_request
 def set_response_headers(response):
@@ -317,5 +373,3 @@ def set_response_headers(response):
 
 
 socketio.run(app, host='0.0.0.0', port=8080, debug=True)
-
-#
