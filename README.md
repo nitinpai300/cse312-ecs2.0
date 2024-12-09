@@ -4,12 +4,12 @@ A group with the four best CS Majors West of the Mississippi.
 **SOME NOTES FOR PROJECT PART 3**
 
 **FOR OBJECTIVE 1:**
-Please make an account first, go to the feed page, and immediately after the page is loaded, the viewer should see:
-User THE_CURRENT_USER'S_NAME Active for: _ seconds | Inactive for: _ seconds
-the "active" timer will continue to check how long a user is currently active UNLESS:
-* Mouse does not move on the tab after 10 seconds
-* The tab is not focused after 10 seconds
-After a user's state is "inactive" the "inactive" timer will increment by seconds up until the system recognizes
+1. Once both accounts are created and logged in, navigate to the feed on both browsers
+2. On the feed the time each user is active/ inactive will be actively displayed beneath all the posts
+3. The "active" timer will continue to check how long a user is currently active UNLESS:
+- Mouse does not move on the tab after 10 seconds
+- The tab is not focused after 10 seconds
+4. After a user's state is "inactive" the "inactive" timer will increment by seconds up until the system recognizes
 mouse movement on the webpage.
 
 
