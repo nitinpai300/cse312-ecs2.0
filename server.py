@@ -23,6 +23,7 @@ db = mongo_client["ECS"]
 users = db["users"]
 tokens = db["tokens"]
 posts = db["posts"]
+profiles = db["profiles"]
 app.secret_key = 'a'  # tbh i'm not sure what this is for again -chris
 
 
@@ -298,6 +299,18 @@ def signup_page():
 @app.route('/login.html', methods=['GET'])
 def login_p():
     return render_template('login.html')
+
+# ----- Profile ---------
+
+@app.route('/profile', methods=["GET"])
+def profile():
+    user_authtoken = request.cookies.get("authenticationTOKEN")
+    auth, usr, xsrf = authenticate(user_authtoken)
+    posts = []
+    return render_template("profile.html", username=usr, posts=posts)
+
+# -----------------------
+
 
 
 @app.route('/logout', methods=['POST', 'GET'])

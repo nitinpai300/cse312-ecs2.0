@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Environmental Criticism Savants 2.0 - Spotify Unwrapped</title>
+    <link rel="stylesheet" href="/static/css/profile.css">
+    <script src="/static/js/profile.js"></script>
+</head>
+<body onload="displayText();">
+    <header>
+        <h1>Environmental Criticism Savants 2.0</h1>
+
+    </header>
+    <div class="content-center">
+        <h2>Welcome to ECS 2.0</h2>
+        <img src="/static/images/images.jpg" style="max-width:150px;" alt="">
+        <p id="description">
+            Check out your posts!
+        </p>
+        {% if username %}
+            <input type="file" id="upload">
+            <button onclick="createPost()">Post</button>
+        {% else %}
+            <p>You need to be logged in to view your profile</p>
+        {% endif %}
+    </div>
+</body>
+</html>
+
+{##}
+{#{% for post in posts %}#}
+{#                <div class="post" id={{ post.postID }}>#}
+{#                    <p><strong>{{ post.author }}:</strong> {{ post.post_content }}</p>#}
+{#                    <!--UNCOMMENT THIS TO SEE THE POST'S ID ON THE WEB PAGE#}
+{#                    <p>{{ post.postID }}</p>#}
+{#                    -->#}
+{#                    <img src="{{ post.filename }}" />#}
+{#                    <p>Likes: {{ post.likes }}</p>#}
+{#                    <p>Liked by: {{ ", ".join(post.likedBy) }}</p>#}
+{#                </div>#}
+{#                <div class="post-actions">#}
+{#                    <button class="like" onclick="likeMessage('{{ post.postID }}')">Like</button>#}
+{#                    <button class="share">Share</button>#}
+{#                    <button class="comment">Comment</button>#}
+{#                </div>#}
+{#            {% else %}#}
+{#                <p>No posts yet! Be the first to share something.</p>#}
+{#            {% endfor %}#}
