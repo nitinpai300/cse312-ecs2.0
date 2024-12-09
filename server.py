@@ -243,10 +243,10 @@ def ip_requests():
     if request.path != "/get_user_times":
         clip = get_ip()
         current_time = time()
-        print(f"Curr IP {clip}")
-        print(f"BLOCKED IPS: {blocked_ips}")
+        print(f"Curr IP: {clip}\n")
+        print(f"BLOCKED IPS: {blocked_ips}\n")
         if clip in blocked_ips and current_time - blocked_ips[clip] > 30:
-            print(f"Removing IP: {clip}")
+            print(f"Removing IP: {clip}\n")
             del blocked_ips[clip]
 
         if clip in blocked_ips:
