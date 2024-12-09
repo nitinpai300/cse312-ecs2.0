@@ -235,7 +235,7 @@ def get_ip():
     if 'X-Forwarded-For' in request.headers:
         print("CRAZY XFOW IP"+ request.headers['X-Forwarded-For'].split(',')[0].strip())
         return request.headers['X-Forwarded-For'].split(',')[0].strip()
-    print("IP FROM REMOTE ADDR"+ request.remote.addr)
+    print("IP FROM REMOTE ADDR"+ request.remote_addr)
     return request.remote_addr
 
 @app.before_request
