@@ -10,7 +10,7 @@
 <body>
     <header>
         <h1>Environmental Criticism Savants 2.0</h1>
-
+        <a href="/feed">Check Feed</a>
     </header>
     <div class="content-center">
         <h1>{{ username }}'s profile</h1>
@@ -34,11 +34,6 @@
                     <p>Liked by: {{ ", ".join(post.likedBy) }}</p>
                 </div>
 
-                <div class="post-actions">
-                    <button class="like" onclick="likeMessage('{{ post.postID }}')">Like</button>
-                    <button class="share">Share</button>
-                    <button class="comment">Comment</button>
-                </div>
             {% else %}
                 <p>No posts yet!</p>
             {% endfor %}
@@ -49,22 +44,3 @@
 </body>
 </html>
 
-
-{#{% for post in posts %}#}
-{#                <div class="post" id={{ post.postID }}>#}
-{#                    <p><strong>{{ post.author }}:</strong> {{ post.post_content }}</p>#}
-{#                    <!--UNCOMMENT THIS TO SEE THE POST'S ID ON THE WEB PAGE#}
-{#                    <p>{{ post.postID }}</p>#}
-{#                    -->#}
-{#                    <img src="{{ post.filename }}" />#}
-{#                    <p>Likes: {{ post.likes }}</p>#}
-{#                    <p>Liked by: {{ ", ".join(post.likedBy) }}</p>#}
-{#                </div>#}
-{#                <div class="post-actions">#}
-{#                    <button class="like" onclick="likeMessage('{{ post.postID }}')">Like</button>#}
-{#                    <button class="share">Share</button>#}
-{#                    <button class="comment">Comment</button>#}
-{#                </div>#}
-{#            {% else %}#}
-{#                <p>No posts yet! Be the first to share something.</p>#}
-{#            {% endfor %}#}
