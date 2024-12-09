@@ -1,10 +1,9 @@
-function createPost() {
-    const postContent = document.getElementById("post-content").value;
+function changeProfile() {
     const uploadInput = document.getElementById("upload");
     const file = uploadInput.files[0];
 
-    if (!postContent && !file) {
-        alert("Must have: message of media");
+    if (!file) {
+        alert("Must choose an image");
         return;
     }
 
@@ -18,6 +17,5 @@ function createPost() {
     } else {
         socket.emit('newPost', { post_content: postContent });
     }
-    document.getElementById("post-content").value = "";
-    document.getElementById("upload").value = null;
+
 }

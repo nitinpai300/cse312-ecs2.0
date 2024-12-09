@@ -248,6 +248,7 @@ def signup():
     salt = bcrypt.gensalt()
     passwordHASHED = bcrypt.hashpw(password, salt)
     users.insert_one({"username": username, "password": passwordHASHED, "liked_posts":[]})
+    profiles.insert_one({"username": username, "profile_picture": "/static/images/Default.jpg"})
     # send 204, flask method
     response = make_response("HTTP/1.1 204 No Content\r\n\r\n")
     response.status_code = 204
@@ -306,8 +307,10 @@ def login_p():
 def profile():
     user_authtoken = request.cookies.get("authenticationTOKEN")
     auth, usr, xsrf = authenticate(user_authtoken)
+    pfp = profiles.find_one({"username": usr}).get("profile_picture")
+
     posts = []
-    return render_template("profile.html", username=usr, posts=posts)
+    return render_template("profile.html", username=usr, auth=auth, posts=posts, pfp=pfp)
 
 # -----------------------
 

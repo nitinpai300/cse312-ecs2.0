@@ -13,16 +13,21 @@
 
     </header>
     <div class="content-center">
-        <h2>Welcome to ECS 2.0</h2>
-        <img src="/static/images/images.jpg" style="max-width:150px;" alt="">
-        <p id="description">
+        <h1>{{ username }}'s profile</h1>
+        <img src= "{{ pfp }}" style="max-width:150px;" alt="">
+
+        <p>Click the button below to change your profile picture</p>
+        {% if auth %}
+            <form action="/change" method="post">
+                <input type="file" id="upload" required>
+                <button onclick="changeProfile()">Select</button>
+            </form>
+            <p id="description">
             Check out your posts!
-        </p>
-        {% if username %}
-            <input type="file" id="upload">
-            <button onclick="createPost()">Post</button>
+            </p>
+            <p>Stuff</p>
         {% else %}
-            <p>You need to be logged in to view your profile</p>
+            <p>Please log in to see your profile</p>
         {% endif %}
     </div>
 </body>
