@@ -233,7 +233,7 @@ blocked_ips = defaultdict(float)
 
 def get_ip():
     if 'X-Forwarded-For' in request.headers:
-        return request.headers['X-Forwarded-For'].split(',')[0]
+        return request.headers['X-Forwarded-For'].split(',')[0].strip()
     return request.remote_addr
 
 @app.before_request
@@ -246,7 +246,7 @@ def ip_requests():
             del blocked_ips[clip]
 
         if clip in blocked_ips:
-            abort(429, 'Too Many Requests: Please try again later.')
+            return make_response('Too Many Requests: Please try again later.', 429)
 
         updated_timestamps = []
         for i in request_timestamps[clip]:
@@ -258,11 +258,11 @@ def ip_requests():
 
         if len(request_timestamps[clip]) > 50:
             blocked_ips[clip] = current_time
-            abort(429, 'Too Many Requests: Please try again later.')
+            return make_response("Too many requests: try again later", 429)
 
 @app.after_request
 def decrease_req(response):
-    clip = request.remote_addr
+    clip = get_ip()
     current_time = time()
     updated_timestamps = []
     for i in request_timestamps[clip]:
