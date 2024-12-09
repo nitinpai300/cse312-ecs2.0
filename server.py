@@ -228,31 +228,41 @@ def logout():
 
 
 # DDOS PROT CODE BELOW
-
 request_timestamps = defaultdict(list) #timestamps for blocking code
 iplist = defaultdict(float)
+
 def get_ip():
     if 'X-Forwarded-For' in request.headers:
         return request.headers['X-Forwarded-For'].split(',')[0]
     return request.remote_addr
 
+
+
 @app.before_request
 def ip_requests():
     clip = get_ip()
     current_time = time()
-    if clip in iplist and current_time - iplist[clip] > 30:
-        del iplist[clip]
+
     if clip in iplist:
-        abort(429, 'Too Many Requests')
+        if current_time < iplist[clip]:
+            return jsonify({'error':"Too Many requests", "message": "Temp ban. wait 30 seconds."}), 429
+        else:
+            del iplist[clip]
+
+    # if clip in iplist:
+    #     abort(429, 'Too Many Requests')
+
     new_timestamps = []
     for i in request_timestamps[clip]:
         if current_time - i < 10:
             new_timestamps.append(i)
     request_timestamps[clip] = new_timestamps
+
     request_timestamps[clip].append(current_time)
+
     if len(request_timestamps[clip]) > 50:
-        iplist[clip] = current_time
-        abort(429, 'Too Many Requests')
+        iplist[clip] = current_time +30
+        return jsonify({'error':"Too Many requests", "message": "Temp ban. wait 30 seconds."}), 429
 
 @app.after_request
 def decrease_req(response):
