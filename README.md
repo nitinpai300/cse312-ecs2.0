@@ -14,6 +14,7 @@ mouse movement on the webpage.
 
 
 **FOR OBJECTIVE 2:**
+Go to environmentcritic.me and run your tests.
 
 **FOR OBJECTIVE 3:** 
 1. Start your server using docker compose up
