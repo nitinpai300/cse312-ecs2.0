@@ -233,7 +233,9 @@ blocked_ips = defaultdict(float)
 
 def get_ip():
     if 'X-Forwarded-For' in request.headers:
+        print("CRAZY XFOW IP"+ request.headers['X-Forwarded-For'].split(',')[0].strip())
         return request.headers['X-Forwarded-For'].split(',')[0].strip()
+    print("IP FROM REMOTE ADDR"+ request.remote.addr)
     return request.remote_addr
 
 @app.before_request
@@ -241,8 +243,10 @@ def ip_requests():
     if request.path != "/get_user_times":
         clip = get_ip()
         current_time = time()
-
+        print('Curr IP'+clip)
+        print("BLOCKED IPS"+blocked_ips)
         if clip in blocked_ips and current_time - blocked_ips[clip] > 30:
+            print("Removing IP"+clip)
             del blocked_ips[clip]
 
         if clip in blocked_ips:
