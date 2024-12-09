@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="/static/css/profile.css">
     <script src="/static/js/profile.js"></script>
 </head>
-<body onload="displayText();">
+<body>
     <header>
         <h1>Environmental Criticism Savants 2.0</h1>
 
@@ -18,14 +18,30 @@
 
         <p>Click the button below to change your profile picture</p>
         {% if auth %}
-            <form action="/change" method="post">
-                <input type="file" id="upload" required>
-                <button onclick="changeProfile()">Select</button>
+            <form action="/profile" method="post" enctype="multipart/form-data">
+                <input type="file" id="upload" name="upload" required>
+                <button type="submit">Select</button>
             </form>
             <p id="description">
             Check out your posts!
             </p>
-            <p>Stuff</p>
+
+            {% for post in posts %}
+                <div class="post" id={{ post.postID }}>
+                    <p><strong>{{ post.author }}:</strong> {{ post.post_content }}</p>
+                    <img src="{{ post.filename }}"  alt=""/>
+                    <p>Likes: {{ post.likes }}</p>
+                    <p>Liked by: {{ ", ".join(post.likedBy) }}</p>
+                </div>
+
+                <div class="post-actions">
+                    <button class="like" onclick="likeMessage('{{ post.postID }}')">Like</button>
+                    <button class="share">Share</button>
+                    <button class="comment">Comment</button>
+                </div>
+            {% else %}
+                <p>No posts yet!</p>
+            {% endfor %}
         {% else %}
             <p>Please log in to see your profile</p>
         {% endif %}
@@ -33,7 +49,7 @@
 </body>
 </html>
 
-{##}
+
 {#{% for post in posts %}#}
 {#                <div class="post" id={{ post.postID }}>#}
 {#                    <p><strong>{{ post.author }}:</strong> {{ post.post_content }}</p>#}
