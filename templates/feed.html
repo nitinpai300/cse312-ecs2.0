@@ -42,10 +42,10 @@
 </script>
 <body>
     <header>
-        <img src="static/images/images.jpeg" alt="">
         <h1>The Feed</h1>
         <p>Welcome, {{ username }}! <a href="/logout">Logout!</a></p>
-        <li><a href="/">Home</a></li>
+        <a href="/">Home</a>
+        <img src= "{{ pfp }}" alt="">
     </header>
     <section id="post-creation">
         <h2>Create a Post</h2>
@@ -57,6 +57,22 @@
         <h3>Recent Posts</h3>
         <div id="feed-container">
             <!--posts here-->
+            {% for post in posts %}
+                <div class="post">
+                    <p><strong>{{ post.author }}:</strong> {{ post.post_content }}</p>
+    
+                    <img src="{{ post.filename }}"  alt=""/>
+                    <p>Likes: {{ post.likes }}</p>
+                    <p>Liked by: {{ ", ".join(post.likedBy) }}</p>
+                </div>
+                <div class="post-actions">
+                    <button class="like" onclick="likeMessage('{{ post.postID }}')">Like</button>
+                    <button class="share">Share</button>
+                    <button class="comment">Comment</button>
+                </div>
+            {% else %}
+                <p>No posts yet! Be the first to share something.</p>
+            {% endfor %}
         </div>
     </section>
 

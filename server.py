@@ -23,8 +23,8 @@ db = mongo_client["ECS"]
 users = db["users"]
 tokens = db["tokens"]
 posts = db["posts"]
+profiles = db["profiles"]
 app.secret_key = 'a'  # tbh i'm not sure what this is for again -chris
-
 
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 rooms_users = defaultdict(set)
@@ -70,7 +70,6 @@ def send_feed():
     emit('updateFeed', {"posts": get_posts})
 
 
-
 @socketio.on('likePost')
 def likePost(data):
     postID = data.get('postID')
@@ -88,17 +87,18 @@ def likePost(data):
             posts.update_one({"postID": postID}, {"$inc": {"likes": -1}})
             posts.update_one({"postID": postID}, {"$pull": {"likedBy": usr}})
             users.update_one({"username": usr}, {"$pull": {"liked_posts": postID}})
-        
+
         post = posts.find_one({"postID": postID})
         postVALUES = {
-            'postID':postID,
-            'likes':post.get('likes', 0),
-            'likedBy':post.get('likedBy', [])
+            'postID': postID,
+            'likes': post.get('likes', 0),
+            'likedBy': post.get('likedBy', [])
         }
         postVALUES["likedBy"] = "Liked by: " + " ".join(postVALUES["likedBy"])
         postVALUES["likes"] = "Likes: " + f'{postVALUES["likes"]}'
         print(postVALUES)
         socketio.emit("updateLikeCount", postVALUES)
+
 
 #====WEBSOCKET FEED====WEBSOCKET FEED====WEBSOCKET FEED====WEBSOCKET FEED====WEBSOCKET FEED====WEBSOCKET FEED====WEBSOCKET FEED====WEBSOCKET FEED
 
@@ -175,9 +175,9 @@ def backgroundTIMER():
 def on_disconnect():
     if request.sid in userActive:
         del userActive[request.sid]
+
+
 #====ACTIVE/INACTIVE====ACTIVE/INACTIVE====ACTIVE/INACTIVE====ACTIVE/INACTIVE====ACTIVE/INACTIVE====ACTIVE/INACTIVE====ACTIVE/INACTIVE
-
-
 
 
 @app.route('/', methods=["GET", "POST"])
@@ -189,9 +189,11 @@ def index():
 
     return render_template("index.html")
 
+
 @app.route('/functions.js', methods=["GET"])
 def js():
     return render_template("/static/js/functions.js")
+
 
 @app.route('/images.jpg', methods=['GET'])
 def render():
@@ -246,11 +248,13 @@ def signup():
         return response
     salt = bcrypt.gensalt()
     passwordHASHED = bcrypt.hashpw(password, salt)
-    users.insert_one({"username": username, "password": passwordHASHED, "liked_posts":[]})
+    users.insert_one({"username": username, "password": passwordHASHED, "liked_posts": []})
+    profiles.insert_one({"username": username, "profile_picture": "/static/images/Default.jpg"})
     # send 204, flask method
     response = make_response("HTTP/1.1 204 No Content\r\n\r\n")
     response.status_code = 204
     return response
+
 
 @app.route("/feed", methods=["GET"])
 def feed():
@@ -258,7 +262,8 @@ def feed():
     auth, user, xsrf = authenticate(user_authtoken)
     if auth:
         getPosts = posts.find()
-        return render_template('feed.html', posts=getPosts, username=user)
+        pfp = profiles.find_one({"username": user}).get("profile_picture")
+        return render_template('feed.html', posts=getPosts, username=user, pfp=pfp)
     else:
         return redirect(url_for('login_p'))
 
@@ -298,6 +303,37 @@ def signup_page():
 @app.route('/login.html', methods=['GET'])
 def login_p():
     return render_template('login.html')
+
+
+# ----- Profile ---------
+
+@app.route('/profile', methods=["GET", "POST"])
+def profile():
+    user_authtoken = request.cookies.get("authenticationTOKEN")
+    auth, usr, xsrf = authenticate(user_authtoken)
+    # Set the profile picture
+    if auth:
+        # Change the profile picture
+        if request.method == "POST":
+            pfp = profiles.find_one({"username": usr}).get("profile_picture")
+            if "upload" in request.files:
+                if pfp != "/static/images/Default.jpg":
+                    os.remove(pfp)
+                file = request.files["upload"]
+                pfp = f"static/images/{str(uuid.uuid4())}.jpg"
+                with open(pfp, "wb") as f:
+                    f.write(file.read())
+                profiles.update_one({"username": usr}, {"$set": {"profile_picture": pfp}})
+        # Get the old one
+        else:
+            pfp = profiles.find_one({"username": usr}).get("profile_picture")
+        usr_posts = posts.find({"author": usr})
+    else:
+        pfp = "/static/images/Default.jpg"
+        usr_posts = {}
+    return render_template("profile.html", username=usr, auth=auth, posts=usr_posts, pfp=pfp)
+
+# -----------------------
 
 
 @app.route('/logout', methods=['POST', 'GET'])

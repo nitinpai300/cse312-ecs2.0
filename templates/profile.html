@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Environmental Criticism Savants 2.0 - Spotify Unwrapped</title>
+    <link rel="stylesheet" href="/static/css/profile.css">
+    <script src="/static/js/profile.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Environmental Criticism Savants 2.0</h1>
+        <a href="/feed">Check Feed</a>
+    </header>
+    <div class="content-center">
+        <h1>{{ username }}'s profile</h1>
+        <img src= "{{ pfp }}" style="max-width:150px;" alt="">
+        {% if auth %}
+            <p>Click the button below to change your profile picture</p>
+            <form action="/profile" method="post" enctype="multipart/form-data">
+                <input type="file" id="upload" name="upload" required>
+                <button type="submit">Select</button>
+            </form>
+            <p id="description">
+            Check out your posts!
+            </p>
+
+            {% for post in posts %}
+                <div class="post" id={{ post.postID }}>
+                    <p><strong>{{ post.author }}:</strong> {{ post.post_content }}</p>
+                    <img src="{{ post.filename }}"  alt=""/>
+                    <p>Likes: {{ post.likes }}</p>
+                    <p>Liked by: {{ ", ".join(post.likedBy) }}</p>
+                </div>
+
+            {% else %}
+                <p>No posts yet!</p>
+            {% endfor %}
+        {% else %}
+            <a href="login.html">Please log in to see your profile</a>
+        {% endif %}
+    </div>
+</body>
+</html>
+

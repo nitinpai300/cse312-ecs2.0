@@ -49,9 +49,8 @@ header nav ul li a {
 }
 
 header img {
-    height: 40px;
-    vertical-align: middle;
-    margin-right: 10px;
+    max-width: 150px;
+    padding-left: 20vw;
 }
 
 footer {
@@ -144,6 +143,7 @@ input[type="text"], input[type="email"], input[type="password"], textarea {
     border-radius: 4px;
     margin-top: 5px;
 }
+
 
 /*added responsivnes*/
 @media (max-width: 768px) {
