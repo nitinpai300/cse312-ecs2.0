@@ -236,7 +236,6 @@ def get_ip():
         return request.headers['X-Forwarded-For'].split(',')[0]
     return request.remote_addr
 
-# Prevent DoS attacks basic -Will
 @app.before_request
 def ip_requests():
     if request.path != "/get_user_times":
